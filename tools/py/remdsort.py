@@ -43,7 +43,7 @@ def main(inputfile, prefix="PT"):
 
     simul = isimul.fetch()
 
-    if simul.mode != "paratemp":
+    if simul.smotion.mode != "remd":
         raise ValueError("Simulation does not look like a parallel tempering one.")
 
     # reconstructs the list of the property and trajectory files that have been output
@@ -115,16 +115,12 @@ def main(inputfile, prefix="PT"):
     ptfile = open("PARATEMP", "r")
 
     # now reads files one frame at a time, and re-direct output to the appropriate location
-    irep = np.zeros(nsys, int)
+
+    line = ptfile.readline().split()
+    irep = range(nsys)  # Could this be harmful?
+    step = 0
     while True:
         # reads one line from PARATEMP index file
-        line = ptfile.readline()
-        line = line.split()
-        if len(line) == 0: break
-
-        step = int(line[0])
-        irep[:] = line[1:]
-
         try:
 
             for prop in lprop:
@@ -132,6 +128,7 @@ def main(inputfile, prefix="PT"):
                     sprop = prop[isys]
                     if step % sprop["stride"] == 0:  # property transfer
                         iline = sprop["ifile"].readline()
+                        if len(iline) == 0: raise EOFError  # useful if line is blank
                         while iline[0] == "#":  # fast forward if line is a comment
                             prop[irep[isys]]["ofile"].write(iline)
                             iline = sprop["ifile"].readline()
@@ -161,6 +158,12 @@ def main(inputfile, prefix="PT"):
         except EOFError:
             break
 
+        if len(line) > 0 and step == int(line[0]):
+            irep = [int(i) for i in line[1:]]
+            line = ptfile.readline()
+            line = line.split()
+
+        step += 1
 
 if __name__ == '__main__':
     main(*sys.argv[1:])

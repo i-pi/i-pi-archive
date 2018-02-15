@@ -17,6 +17,7 @@ G. Martyna, A. Hughes and M. Tuckerman, J. Chem. Phys., 110, 3275.
 
 
 import numpy as np
+import sys
 
 from ipi.utils.depend import *
 from ipi.utils.units import *
@@ -141,6 +142,11 @@ class Barostat(dobject):
                                     dependencies=[dself.kstress,
                                                   dd(cell).V,
                                                   dd(forces).vir])
+                                                  
+        dself.pot = depend_value(name='pot', value = 0.0)
+
+        dself.kin = depend_value(name='kin', value = 0.0)                                           
+        
         if bias != None:
             dself.kstress.add_dependency(dd(bias).f)
             dself.stress.add_dependency(dd(bias).vir)

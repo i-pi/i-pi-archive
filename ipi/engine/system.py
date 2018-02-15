@@ -13,6 +13,7 @@ forcefields which govern the interaction potential.
 import os.path
 import sys
 import time
+import threading
 
 import numpy as np
 
@@ -41,9 +42,7 @@ class System(dobject):
        beads: A beads object giving the atom positions.
        cell: A cell object giving the system box.
        fcomp: A list of force components that must act on each replica
-       bcomp: A list of bias components that must act on each replica
        forces: A Forces object that actually compute energy and forces
-       bias: A Forces object that compute the bias components
        ensemble: An ensemble object giving the objects necessary for producing
           the correct ensemble.
        outputs: A list of output objects that should be printed during the run
@@ -54,7 +53,7 @@ class System(dobject):
        simul: The parent simulation object.
     """
 
-    def __init__(self, init, beads, nm, cell, fcomponents, bcomponents=[], ensemble=None, motion=None, prefix=""):
+    def __init__(self, init, beads, nm, cell, fcomponents, ensemble=None, motion=None, prefix=""):
         """Initialises System class.
 
         Args:
@@ -84,9 +83,6 @@ class System(dobject):
         self.fcomp = fcomponents
         self.forces = Forces()
 
-        self.bcomp = bcomponents
-        self.bias = Forces()
-
         self.properties = Properties()
         self.trajs = Trajectories()
 
@@ -97,9 +93,8 @@ class System(dobject):
 
         # binds important computation engines
         self.forces.bind(self.beads, self.cell, self.fcomp, self.simul.fflist)
-        self.bias.bind(self.beads, self.cell, self.bcomp, self.simul.fflist)
         self.nm.bind(self.ensemble, self.motion, beads=self.beads, forces=self.forces)
-        self.ensemble.bind(self.beads, self.nm, self.cell, self.forces, self.bias)
+        self.ensemble.bind(self.beads, self.nm, self.cell, self.forces, self.simul.fflist)
         self.motion.bind(self.ensemble, self.beads, self.nm, self.cell, self.forces, self.prng)
 
         dpipe(dd(self.nm).omegan2, dd(self.forces).omegan2)
@@ -107,5 +102,6 @@ class System(dobject):
         self.init.init_stage2(self)
 
         # binds output management objects
+        self._propertylock = threading.Lock()
         self.properties.bind(self)
         self.trajs.bind(self)

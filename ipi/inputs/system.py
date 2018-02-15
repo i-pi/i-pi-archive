@@ -7,6 +7,7 @@
 
 import os.path
 import sys
+import re
 
 import numpy as np
 
@@ -34,8 +35,63 @@ from ipi.engine.motion import Motion
 from ipi.inputs.initializer import InputInitializer
 from ipi.engine.initializer import Initializer
 
+__all__ = ['InputSystem', 'InputSysTemplate']
 
-__all__ = ['InputSystem']
+
+class InputSysTemplate(Input):
+    """A template class to generate multiple systems with varying parameters.
+
+    Generates a series of systems by automatically filling up labels in a template input structure
+
+    Fields:
+        template: The text that corresponds to the system field template
+        labels: List of strings identifying substitution fields in the template
+        instance: List of strings that should be used to substitute the labels    
+    """
+
+    fields = {
+        "template": (InputRaw, {"help": """ A string that will be read verbatim containing the model for a system to be generated""",
+                                "dtype": str
+                                }),
+        "labels": (InputArray, {"help": """ A list of strings that should be substituted in the template to create multiple systems """,
+                                "dtype": str})
+    }
+    dynamic = {
+        "instance": (InputArray, {"help": """ A list of strings that should the labels creating one system instance """,
+                                  "dtype": str})
+    }
+
+    def fetch(self):
+        """Creates a series of physical system objects using a template and label substitutions.
+
+        Returns:
+            A list pf System objects of the appropriate type and with the appropriate
+            properties, built by substituting placeholders in a template with the given values
+
+        Raises:
+            ValueError: Raised if the labels and the instance lists have mismatching lengths
+        """
+
+        super(InputSysTemplate, self).fetch()
+
+        template = self.template.fetch()
+        labels = self.labels.fetch()
+        lsys = []
+        for (k, v) in self.extra:
+            if k == "instance":
+                ins = v.fetch()
+                sys = template
+                if len(labels) != len(ins):
+                    raise ValueError("Labels and instance length mismatch")
+                for l in xrange(len(ins)):  # string replacement within the template
+                    sys = sys.replace(labels[l], ins[l])
+                print "Generating system from template: \n", sys
+                xsys = xml_parse_string(sys)  # parses the string to an XML object
+                isys = InputSystem()
+                isys.parse(xsys.fields[0][1])  # parses the XML object into an InputSystem
+                lsys.append(isys.fetch())     # fetches the generated System and appends to the list
+
+        return lsys
 
 
 class InputSystem(Input):
@@ -46,7 +102,6 @@ class InputSystem(Input):
     object.
 
     Attributes:
-       copies: Decides how many of each system to create.
        prefix: A string to prepend to the output file names for this system.
 
     Fields:
@@ -63,8 +118,6 @@ class InputSystem(Input):
         "initialize": (InputInitializer, {"help": InputInitializer.default_help,
                                           "default": input_default(factory=Initializer)}),
               "forces": (InputForces, {"help": InputForces.default_help}),
-              "bias": (InputForces, {"help": InputForces.default_help,
-                                     "default": []}),
               "ensemble": (InputEnsemble, {"help": InputEnsemble.default_help,
                                            "default": input_default(factory=Ensemble, kwargs={'temp': 1.0})}),
               "motion": (InputMotion, {"help": InputMotion.default_help, "default": input_default(factory=Motion)}),
@@ -77,8 +130,7 @@ class InputSystem(Input):
     }
 
     attribs = {
-        "copies": (InputAttribute, {"help": "Create multiple copies of the system. This is handy for initialising simulations with multiple systems.", "default": 1, "dtype": int}),
-     "prefix": (InputAttribute, {"help": "Prepend this string to output files generated for this system. If 'copies' is greater than 1, a trailing number will be appended.", "default": "", "dtype": str})
+        "prefix": (InputAttribute, {"help": "Prepend this string to output files generated for this system. ", "default": "", "dtype": str})
     }
 
     default_help = "This is the class which holds all the data which represents a single state of the system."
@@ -95,7 +147,6 @@ class InputSystem(Input):
 
         self.prefix.store(psys.prefix)
         self.forces.store(psys.fcomp)
-        self.bias.store(psys.bcomp)
         self.ensemble.store(psys.ensemble)
         self.motion.store(psys.motion)
         self.beads.store(psys.beads)
@@ -124,7 +175,6 @@ class InputSystem(Input):
                                         nm=self.normal_modes.fetch(),
                                         cell=self.cell.fetch(),
                                         fcomponents=self.forces.fetch(),
-                                        bcomponents=self.bias.fetch(),
                                         ensemble=self.ensemble.fetch(),
                                         motion=self.motion.fetch(),
                                         prefix=self.prefix.fetch()

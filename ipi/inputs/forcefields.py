@@ -8,12 +8,14 @@
 from copy import copy
 import numpy as np
 
-from ipi.engine.forcefields import ForceField, FFSocket, FFLennardJones, FFDebye, FFYaff
+from ipi.engine.forcefields import ForceField, FFSocket, FFLennardJones, FFDebye, FFPlumed, FFYaff
 from ipi.interfaces.sockets import InterfaceSocket
+import ipi.engine.initializer
+from ipi.inputs.initializer import *
 from ipi.utils.inputvalue import *
 
 
-__all__ = ["InputFFSocket", 'InputFFLennardJones', 'InputFFDebye', 'InputFFYaff']
+__all__ = ["InputFFSocket", 'InputFFLennardJones', 'InputFFDebye', 'InputFFPlumed', 'InputFFYaff']
 
 
 class InputForceField(Input):
@@ -118,7 +120,10 @@ class InputFFSocket(InputForceField):
                                   "options": ["unix", "inet"],
                                   "default": "inet",
                                   "help": "Specifies whether the driver interface will listen onto a internet socket [inet] or onto a unix socket [unix]."}),
-
+                "matching": (InputAttribute, {"dtype": str,
+                                              "options": ["auto", "any"],
+                                              "default": "auto",
+                                              "help": "Specifies whether requests should be dispatched to any client, or automatically matched to the same client when possible [auto]."})
     }
 
     attribs.update(InputForceField.attribs)
@@ -144,6 +149,7 @@ class InputFFSocket(InputForceField):
         self.timeout.store(ff.socket.timeout)
         self.slots.store(ff.socket.slots)
         self.mode.store(ff.socket.mode)
+        self.matching.store(ff.socket.match_mode)
 
     def fetch(self):
         """Creates a ForceSocket object.
@@ -191,6 +197,12 @@ class InputFFLennardJones(InputForceField):
         return FFLennardJones(pars=self.parameters.fetch(), name=self.name.fetch(),
                               latency=self.latency.fetch(), dopbc=self.pbc.fetch())
 
+        if self.slots.fetch() < 1 or self.slots.fetch() > 5:
+            raise ValueError("Slot number " + str(self.slots.fetch()) + " out of acceptable range.")
+        if self.latency.fetch() < 0:
+            raise ValueError("Negative latency parameter specified.")
+        if self.timeout.fetch() < 0.0:
+            raise ValueError("Negative timeout parameter specified.")
 
 class InputFFDebye(InputForceField):
 
@@ -219,6 +231,40 @@ class InputFFDebye(InputForceField):
 
         return FFDebye(H=self.hessian.fetch(), xref=self.x_reference.fetch(), vref=self.v_reference.fetch(), name=self.name.fetch(),
                        latency=self.latency.fetch(), dopbc=self.pbc.fetch())
+
+
+class InputFFPlumed(InputForceField):
+
+    fields = {
+        "init_file": (InputInitFile, {"default": input_default(factory=ipi.engine.initializer.InitFile, kwargs={"mode": "xyz"}),
+                                      "help": "This describes the location to read the reference structure file from."}),
+        "precision": (InputValue, {"dtype": int, "default": 8, "help": "The precision PLUMED was compiled with"}),
+        "plumeddat": (InputValue, {"dtype": str, "default": "plumed.dat", "help": "The PLUMED input file"}),
+        "plumedstep": (InputValue, {"dtype": int, "default": 0, "help": "The current step counter for PLUMED calls"}),
+
+    }
+
+    attribs = {}
+
+    attribs.update(InputForceField.attribs)
+    fields.update(InputForceField.fields)
+
+    default_help = """ Direct PLUMED interface """
+    default_label = "FFPLUMED"
+
+    def store(self, ff):
+        super(InputFFPlumed, self).store(ff)
+        self.precision.store(ff.precision)
+        self.plumeddat.store(ff.plumeddat)
+        self.plumedstep.store(ff.plumedstep)
+        self.init_file.store(ff.init_file)
+
+    def fetch(self):
+        super(InputFFPlumed, self).fetch()
+
+        return FFPlumed(name=self.name.fetch(), latency=self.latency.fetch(), dopbc=self.pbc.fetch(),
+                        precision=self.precision.fetch(), plumeddat=self.plumeddat.fetch(),
+                        plumedstep=self.plumedstep.fetch(), init_file=self.init_file.fetch())
 
 
 class InputFFYaff(InputForceField):

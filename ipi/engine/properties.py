@@ -246,10 +246,23 @@ class Properties(dobject):
             "ensemble_temperature": {"dimension": "temperature",
                                      "help": "The target temperature for the current ensemble",
                                      "func": (lambda: self.ensemble.temp)},
+            "ensemble_pressure": {"dimension": "pressure",
+                                  "help": "The target pressure for the current ensemble",
+                                  "func": (lambda: self.ensemble.pext)},
+            "hweights_component": {"dimension": "",
+                                   "help": "The weight associated to the one part of the hamiltonian. ",
+                                   "longhelp": """The weight associated one part of the hamiltonian. Takes one mandatory
+                         argument index (zero-based) that indicates for which component of the hamiltonian the weight must be returned. """,
+                                   'func': (lambda index: self.ensemble.hweights[int(index)])},
+            "ensemble_bias": {"dimension": "energy",
+                              "help": "The bias applied to the current ensemble",
+                              "func": (lambda: self.ensemble.bias.pot / self.beads.nbeads)},
+            "bweights_component": {"dimension": "",
+                                   "help": "The weight associated to the one part of the hamiltonian. ",
+                                   "longhelp": """The weight associated one part of the hamiltonian. Takes one mandatory
+                         argument index (zero-based) that indicates for which component of the hamiltonian the weight must be returned. """,
+                                   'func': (lambda index: self.ensemble.bweights[int(index)])},
 
-            #      "ensemble_bias":  {  "dimension": "energy",
-            #                       "help" : "The bias applied to the current ensemble",
-            #                       "func": (lambda: self.ensemble.bias) },
             #      "ensemble_logweight":  {  "dimension": "",
             #                       "help" : "The (log) weight of the configuration in the biassed ensemble",
             #                       "func": (lambda: self.ensemble.bias/(Constants.kb*self.ensemble.temp)) },
@@ -416,7 +429,13 @@ class Properties(dobject):
                            "longhelp": """The kinetic stress tensor of the (extended) classical system. Returns the 6
                       independent components in the form [xx, yy, zz, xy, xz, yz].""",
                            "func": (lambda: self.tensor2vec(self.nm.kstress / self.cell.V))},
-
+            "virial_fq": {"dimension": "energy",
+                          "size": 1,
+                          "help": "The scalar product of force and position.",
+                          "longhelp": """Returns the scalar product of force and positions. Useful to compensate for 
+                          the harmonic component of a potential. Gets one argument 'ref' that should be a filename for a 
+                          reference configuration, in the style of the FFDebye geometry input, and one that contains the input units.""",
+                          "func": self.get_fqvirial},
             "virial_md": {"dimension": "pressure",
                           "size": 6,
                           "help": "The virial tensor of the (extended) classical system.",
@@ -623,6 +642,12 @@ class Properties(dobject):
         self.dbeads = system.beads.copy()
         self.dcell = system.cell.copy()
         self.dforces = system.forces.copy(self.dbeads, self.dcell)
+        self.fqref = None
+        self._threadlock = system._propertylock # lock to avoid concurrent access and messing up with dbeads 
+        
+        # self.properties_init()  # Initialize the properties here so that all
+        #+all variables are accessible (for example to set
+        #+the size of the hamiltonian_weights).
 
     def __getitem__(self, key):
         """Retrieves the item given by key.
@@ -654,7 +679,8 @@ class Properties(dobject):
         # pkey["func"](*arglist,**kwarglist) gives the value of the property
         # in atomic units. unit_to_user() returns the value in the user
         # specified units.
-        value = pkey["func"](*arglist, **kwarglist)
+        with self._threadlock:
+            value = pkey["func"](*arglist, **kwarglist)
         if "dimension" in pkey:
             dimension = pkey["dimension"]
         else:
@@ -850,6 +876,20 @@ class Properties(dobject):
             warning("Couldn't find an atom which matched the argument of kinetic energy, setting to zero.", verbosity.medium)
 
         return acv
+
+    def get_fqvirial(self, ref="", units=""):
+        if self.fqref is None:
+            if ref == "":
+                self.fqref = np.zeros(3 * self.beads.natoms)
+            else:
+                self.fqref = np.loadtxt(ref).flatten() * unit_to_internal('length', units, 1)
+                if len(self.fqref) != 3 * self.beads.natoms:
+                    raise ValueError("Atom number mismatch in reference file for virial_fq")
+        fq = 0.0
+        for b in xrange(self.beads.nbeads):
+            fq += np.dot(self.forces.f[b], self.beads.q[b] - self.fqref)
+
+        return fq * 0.5 / self.beads.nbeads
 
     def get_sckintd(self, atom=""):
         """Calculates the Suzuki-Chin thermodynamic quantum centroid virial kinetic energy estimator.
@@ -2011,8 +2051,8 @@ class Trajectories(dobject):
     """
 
     def __init__(self):
-        """Initialises a Trajectories object."""
-
+        """Initialises a Trajectories object."""        
+        
         self.traj_dict = {
             # Note that here we want to return COPIES of the different arrays, so we make sure to make an operation in order not to return a reference.
             "positions": {"dimension": "length",
@@ -2093,6 +2133,7 @@ class Trajectories(dobject):
         self.dbeads = system.beads.copy()
         self.dcell = system.cell.copy()
         self.dforces = self.system.forces.copy(self.dbeads, self.dcell)
+        self._threadlock = system._propertylock
 
     def get_akcv(self):
         """Calculates the contribution to the kinetic energy due to each degree
@@ -2274,7 +2315,8 @@ class Trajectories(dobject):
         # in atomic units. unit_to_user() returns the value in the user
         # specified units.
 
-        value = pkey["func"](*arglist, **kwarglist)
+        with self._threadlock:
+            value = pkey["func"](*arglist, **kwarglist)
         if "dimension" in pkey:
             dimension = pkey["dimension"]
         else:

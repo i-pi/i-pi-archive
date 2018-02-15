@@ -14,7 +14,7 @@ import string
 import numpy as np
 
 
-__all__ = ['xml_node', 'xml_handler', 'xml_parse_string', 'xml_parse_file',
+__all__ = ['xml_node', 'xml_handler', 'xml_parse_string', 'xml_parse_file', 'xml_write',
            'read_type', 'read_float', 'read_int', 'read_bool', 'read_list',
            'read_array', 'read_tuple', 'read_dict', 'write_type', 'write_list',
            'write_tuple', 'write_float', 'write_bool', 'write_dict']
@@ -172,6 +172,54 @@ def xml_parse_file(stream):
     myhandle = xml_handler()
     parse(stream, myhandle)
     return myhandle.root
+
+
+def xml_write(xml, name="", indent="", text=""):
+    """Writes data in xml file format.
+
+      Writes the tag, attributes, data and closing tag appropriate to the
+      particular fields and attribs data. Writes in a recursive manner, so
+      that objects contained in the fields dictionary have their write function
+      called, so that their tags are written between the start and end tags
+      of this object, as is required for the xml format.
+
+      This also adds an indent to the lower levels of the xml heirarchy,
+      so that it is easy to see which tags contain other tags.
+
+      Args:
+         name: An optional string giving the tag name. Defaults to "".
+         indent: An optional string giving the string to be added to the start
+            of the line, so usually a number of tabs. Defaults to "".
+         text: Additional text to be output between the tags.
+
+      Returns:
+         A string giving all the data contained in the fields and attribs
+         dictionaries, in the appropriate xml format.
+    """
+
+    rstr = ""
+    if not name == "":
+        rstr = indent + "<" + name;
+        for a, v in xml.attribs.iteritems():
+            rstr += " " + a + "='" + v + "'"
+        rstr += ">"
+
+    rstr += text.strip()
+
+    inline = False
+    for a, v in xml.fields:
+        if a == "_text":
+            rstr += v.strip()
+            if v.strip() != "": inline = True
+        else:
+            rstr += "\n" + xml_write(v, indent="  " + indent, name=a, text="\n")
+
+    if not name == "":
+        if inline:
+            rstr += "</" + name + ">"
+        else:
+            rstr += "\n" + indent + "</" + name + ">"
+    return rstr
 
 
 def read_type(type, data):
