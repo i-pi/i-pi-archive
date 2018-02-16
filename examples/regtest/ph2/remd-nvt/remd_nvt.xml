@@ -96,7 +96,7 @@ ENDREGTEST -->
 
    <smotion mode="remd">
       <remd>
-         <stride> 4 </stride>
+         <stride> 2 </stride>
       </remd>
    </smotion>
 </simulation>
