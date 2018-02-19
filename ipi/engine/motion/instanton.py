@@ -502,6 +502,12 @@ class HessianOptimizer(DummyOptimizer):
         self.beads.q = self.gm.dbeads.q
         self.forces.transfer_forces(self.gm.dforces)  # This forces the update of the forces
 
+        # Print current instanton geometry and hessian
+        if (self.save > 0 and np.mod(step, self.save) == 0) or self.exit:
+            print_instanton_geo(self.prefix, step, self.im.dbeads.nbeads, self.im.dbeads.natoms, self.im.dbeads.names,
+                            self.im.dbeads.q, self.old_u, self.cell, self.energy_shift)
+            print_instanton_hess(self.prefix, step, self.hessian)
+
         # Exit simulation step
         d_x_max   = np.amax(np.absolute(np.subtract(self.beads.q, self.old_x)))
         self.exit = self.exitstep(self.forces.pot, self.old_u.sum(), d_x_max, self.exit, step)
@@ -511,11 +517,7 @@ class HessianOptimizer(DummyOptimizer):
         self.old_u[:] = self.forces.pots
         self.old_f[:] = self.forces.f
 
-        # Print current instanton geometry and hessian
-        if (self.save > 0 and np.mod(step, self.save) == 0) or self.exit:
-            print_instanton_geo(self.prefix, step, self.im.dbeads.nbeads, self.im.dbeads.natoms, self.im.dbeads.names,
-                            self.im.dbeads.q, self.old_u, self.cell, self.energy_shift)
-            print_instanton_hess(self.prefix, step, self.hessian)
+
 
 def Instanton(x0, f0, f1, h, update, asr, im, gm, big_step, opt, m):
     """Do one step. Update hessian for the new position. Update the position and force inside the mapper.
