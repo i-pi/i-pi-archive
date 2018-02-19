@@ -439,8 +439,12 @@ class HessianOptimizer(DummyOptimizer):
             elif geop.hessian.size == 0 and geop.hessian_init == 'true':
                 info(" Initial hessian is not provided. We are going to compute it.", verbosity.low)
                 geop.hessian = np.zeros((self.beads.natoms*3, self.beads.q.size))
+                if ((self.beads.q - self.beads.q[0]) == 0).all():
+                    raise ValueError("""We need a initial hessian in order to create our initial
+                    instanton geometry. Please provide a (1-bead) hessian or an initial instanton geometry.""")
             else:
                 raise ValueError(" 'Hessian_init' is false, an initial hessian (of the proper size) must be provided.")
+
 
         self.hessian = geop.hessian
 
