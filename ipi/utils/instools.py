@@ -109,7 +109,24 @@ def get_hessian(h, gm, x0, d=0.0005):
     # ddforces = gm.dforces.copy(ddbeads, ddcell)
 
 
-    for j in range(ii):
+    i0 = -1
+    #Check if there is a temporal file:
+    for i in range(ii,-1,-1):
+        try:
+            b = np.loadtxt('hessian_' + str(i) + '.tmp')
+        except IOError:
+            pass
+        else:
+            h[:, :] = b[:, :]
+            i0=i
+            print('We have found a temporary file ( hessian_' + str(i) + '.tmp). ')
+            if b.shape == h.shape: #Check that the last temporal file was properly written
+                break
+            else:
+                continue
+
+
+    for j in range(i0+1,ii):
         info(" @Instanton: Computing hessian: %d of %d" % ((j + 1), ii), verbosity.low)
         x = x0.copy()
 
@@ -119,11 +136,14 @@ def get_hessian(h, gm, x0, d=0.0005):
         e, f2 = gm(x)
         g = (f1 - f2) / (2 * d)
 
-        for i in range(gm.dbeads.nbeads):
-            h[j,:] = g.flatten()
 
-            # for i in range(gm.dbeads.nbeads):
-            #    h[j + i * ii, i * ii:(i + 1) * ii] = g[i, :]
+
+        h[j,:] = g.flatten()
+
+        f = open('hessian_'+str(j)+'.tmp', 'w')
+        #print >> f, 'STEP %i' % j
+        np.savetxt(f, h)
+        f.close()
 
     u, g = gm(x0)  # Keep the mapper updated
 
@@ -131,6 +151,11 @@ def get_hessian(h, gm, x0, d=0.0005):
     # gm.dbeads.q = ddbeads.q
     # gm.dforces.transfer_forces(ddforces)
 
+    for i in range(ii):
+        try:
+            os.remove('hessian_' + str(i) + '.tmp')
+        except OSError:
+            pass
 
 def clean_hessian(h, q, natoms, nbeads, m, m3, asr, mofi=False):
     """
