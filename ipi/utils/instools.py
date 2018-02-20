@@ -25,16 +25,18 @@ def banded_hessian(h, im, shift=0.001):
             hnew[j, (ndiag-1-j)+i*natoms*3:(i+1)*natoms*3] = np.diag(h_aux, ndiag-1-j)
 
     # add spring parts
-    # Diagonal
-    d_corner = im.dbeads.m3[0] * im.omega2
-    d_0 = np.array([[d_corner * 2]]).repeat(im.dbeads.nbeads - 2, axis=0).flatten()
-    diag_sp = np.concatenate((d_corner, d_0, d_corner))
-    hnew[-1,:] += diag_sp
 
-    # Non-Diagonal
-    d_out = - d_corner
-    ndiag_sp = np.array([[d_out]]).repeat(im.dbeads.nbeads-1, axis=0).flatten()
-    hnew[0,:] = np.concatenate((np.zeros(natoms*3), ndiag_sp ))
+    if nbeads>1:
+        # Diagonal
+        d_corner = im.dbeads.m3[0] * im.omega2
+        d_0 = np.array([[d_corner * 2]]).repeat(im.dbeads.nbeads - 2, axis=0).flatten()
+        diag_sp = np.concatenate((d_corner, d_0, d_corner))
+        hnew[-1,:] += diag_sp
+
+        # Non-Diagonal
+        d_out = - d_corner
+        ndiag_sp = np.array([[d_out]]).repeat(im.dbeads.nbeads-1, axis=0).flatten()
+        hnew[0,:] = np.concatenate((np.zeros(natoms*3), ndiag_sp ))
 
     # Add safety shift value
     hnew[-1,:] += shift
