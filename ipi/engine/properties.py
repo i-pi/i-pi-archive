@@ -409,6 +409,18 @@ class Properties(dobject):
                       "size" : 3,
                       "func" : (lambda atom="", bead="-1": self.get_atom_vec(self.forces.f, atom=atom, bead=bead))},
 
+      "atom_x_path": {"dimension": "length",
+                            "help": "The positions of all the beads of a particle given its index.",
+                            "longhelp": """The positions of all the beads of a particle given its index. Takes arguments index
+                       and bead (both zero based). If bead is not specified, refers to the centroid.""",
+                            "func": (lambda atom="": np.asarray([self.get_atom_vec(self.beads.q, atom=atom, bead=j) for j in range(self.beads.nbeads)]).flatten())},
+
+      "atom_f_path": {"dimension": "length",
+                            "help": "The forces acting on all the beads of a particle given its index.",
+                            "longhelp": """The forces acting on all the beads of a particle given its index. Takes arguments index
+                       and bead (both zero based). If bead is not specified, refers to the centroid.""",
+                            "func": (lambda atom="": np.asarray([self.get_atom_vec(self.forces.f, atom=atom, bead=j) for j in range(self.beads.nbeads)]).flatten())},
+
       "stress_md": {  "dimension": "pressure",
                       "size" : 6,
                       "help": "The total stress tensor of the (extended) classical system.",
