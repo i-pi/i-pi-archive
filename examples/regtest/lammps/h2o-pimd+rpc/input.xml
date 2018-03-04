@@ -7,6 +7,7 @@ ENDREGTEST -->
   <output prefix='simulation'>
     <properties stride='1' filename='out'>  [ step, time{picosecond}, conserved, temperature{kelvin}, kinetic_cv, potential, pressure_cv{megapascal}] </properties>
     <trajectory filename='pos' stride='1'> positions </trajectory>
+    <trajectory filename='pos_stride4' stride='1' bead='-4'> positions </trajectory>
   </output>
   <total_steps>10</total_steps>
   <prng>
