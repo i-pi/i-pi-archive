@@ -4,10 +4,10 @@
 Reads a hessian file  and/or a positions file (xyz format) and creates an interpolation
 that can be used in a further calculation
 
-Syntax manual:    python  Instanton_interpolation.py m -xyz <geometry file> -h <hessian file> -n <new-beads(half-polymer)>
+Syntax manual:    python  Instanton_interpolation.py -m -xyz <geometry file> -h <hessian file> -n <new-beads(half-polymer)>
 Syntax chk:       python  Instanton_interpolation.py -chk  <checkpoint_file>  -n <new-beads(half-polymer)>
 
-Example:   python  Instanton_interpolation.py  -xyz INSTANTON.xyz  -c  INSTANTON.hess -n 30
+Example:   python  Instanton_interpolation.py  -xyz INSTANTON.xyz  -hess  INSTANTON.hess -n 30
            python  Instanton_interpolation.py  -chk RESTART -n 30
 
 Relies on the infrastructure of i-pi, so the ipi package should
@@ -22,8 +22,6 @@ import numpy as np
 import sys
 import argparse
 
-
-# Y. Litman, 2017.
 
 # You can insert the i-pi path with the following lines.
 # Uncomment them and adjust the ipi_path variable
@@ -64,24 +62,6 @@ else:
        print 'Manual mode  specified and geometry file name not provided'
        sys.exit()
 
-#-----Some functions-----------------
-
-def get_double_h(nbeads0, natoms, h0):
-    """Takes nbeads, positions and hessian (only the 'physcal part') of the half polymer and
-       returns the equivalent for the full ringpolymer."""
-
-    ii = 3 * natoms
-    iii = 3 * natoms * nbeads0
-    h = np.zeros((ii, iii * 2))
-    h[:, 0:iii] = h0
-
-    for i in range(nbeads0):
-        x = i * ii + iii
-        y = ((nbeads0 - 1) - i) * ii
-        h[:, x:x + ii] = h0[:, y:y + ii]
-
-    return h
-
 # OPEN AND READ   ###########################################################3
 
 
@@ -90,7 +70,7 @@ if input_geo != 'None' or chk !='None':
         if (os.path.exists(input_geo)):
             ipos = open(input_geo, "r")
         else:
-            print "We can't find %s " % input_hess
+            print "We can't find %s " % input_geo
             sys.exit()
 
         pos = list()
@@ -129,11 +109,13 @@ if input_geo != 'None' or chk !='None':
 
     
     # Compose the full ring polymer.
-    q2 = np.concatenate((q, np.flipud(q)), axis=0)
+    #q2 = np.concatenate((q, np.flipud(q)), axis=0)
 
     # Make the rpc step
-    rpc = nm_rescale(2 * nbeads, 2 * nbeadsNew)
-    new_q = rpc.b1tob2(q2)[0:nbeadsNew]
+    #rpc = nm_rescale(2 * nbeads, 2 * nbeadsNew)
+    #new_q = rpc.b1tob2(q2)[0:nbeadsNew]
+    rpc = nm_rescale(nbeads, nbeadsNew,np.asarray(range(natoms))) #We use open path RPC
+    new_q = rpc.b1tob2(q)
 
     # Print
     out = open("NEW_INSTANTON.xyz", "w")
@@ -180,23 +162,28 @@ if input_hess != 'None' or chk !='None':
     out = open("NEW_HESSIAN.dat", "w")
 
     print 'Creating matrix... '
-    hessian = get_double_h(nbeads, natoms, h)
+#    hessian = get_double_h(nbeads, natoms, h)
 
+    hessian = h
     size0 = natoms * 3
-    size1 = size0 * (2 * nbeads)
-    size2 = size0 * (2 * nbeadsNew)
+    #size1 = size0 * (2 * nbeads)
+    #size2 = size0 * (2 * nbeadsNew)
+    size1 = size0 *  nbeads
+    size2 = size0 *  nbeadsNew
 
     new_h = np.zeros([size0, size2])
     for i in range(size0):
         for j in range(size0):
             h = np.array([])
-            for n in range(2 * nbeads):
+            for n in range(nbeads):
                 h = np.append(h, hessian[i, j + size0 * n])
             diag = rpc.b1tob2(h)
             new_h[i, j:size2:size0] += diag
 
+    #new_h_half = new_h[:, 0:size2 / 2]
+    #np.savetxt(out, new_h_half.reshape(1, new_h_half.size))
     new_h_half = new_h[:, 0:size2 / 2]
-    np.savetxt(out, new_h_half.reshape(1, new_h_half.size))
+    np.savetxt(out, new_h.reshape(1, new_h.size))
 
     print 'The new physical Hessian (half polymer) was generated'
     print 'Check NEW_HESSIAN.dat'

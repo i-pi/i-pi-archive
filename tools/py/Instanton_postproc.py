@@ -69,6 +69,7 @@ parser.add_argument('-e', '--energy_shift', type=float, default=0.0, help="Zero 
 parser.add_argument('-f', '--filter', default=[], help='List of atoms indexes to filter (i.e. eliminate its componentes in the position,mass and hessian arrays. It is 0 based.', type=int, action='append')
 parser.add_argument('-n', '--nbeadsR', default=0,  help='Number of beads (full polymer) to compute the approximate partition function (only reactant case)', type=int )
 parser.add_argument('-freq', '--freq_reac', default=None, help="List of frequencies of the minimum. Required for splitting calculation.")
+parser.add_argument('-q', '--quiet', default=False,action='store_true', help="Avoid the Qvib and Qrot calculation in the instanton case.")
 
 args       = parser.parse_args()
 inputt     = args.input
@@ -79,6 +80,7 @@ V00        = args.energy_shift
 filt       = args.filter
 nbeadsR    = args.nbeadsR
 input_freq = args.freq_reac
+quiet      = args.quiet
 
 if case not in list(['reactant', 'TS', 'instanton']):
     raise ValueError("We can not indentify the case. The valid cases are: 'reactant', 'TS' and 'instanton'")
@@ -234,15 +236,18 @@ elif case == 'instanton':
         sys.exit()
     print 'The instanton mode is %s' % mode
     print 'The temperature is %f K' % (temp/K2au)
+    
     if mode == 'rate':
-        print 'The full ring polymer is made of %i' % (nbeads*2)
-        h0      = red2comp(hessian, nbeads, natoms)
-        pos, nbeads, hessian2 = get_double(beads.q, nbeads, natoms, h0)
-        hessian = hessian2
-        m3      = np.concatenate((beads.m3, beads.m3), axis=0)
-        omega2  = (temp * nbeads * kb / hbar) ** 2
-        spring  = SpringMapper.spring_hessian(natoms, nbeads, beads.m3[0], omega2, mode='full')
-        h       = np.add(hessian, spring)
+           h0      = red2comp(hessian, nbeads, natoms)
+           pos, nbeads, hessian2 = get_double(beads.q, nbeads, natoms, h0)
+           hessian = hessian2
+           m3      = np.concatenate((beads.m3, beads.m3), axis=0)
+           omega2  = (temp * nbeads * kb / hbar) ** 2
+           if not quiet:
+              spring  = SpringMapper.spring_hessian(natoms, nbeads, beads.m3[0], omega2, mode='full')
+              h       = np.add(hessian, spring)
+           print 'The full ring polymer is made of %i' % (nbeads)
+           print 'We used %i beads in the calculation.' % (nbeads/2)
     elif mode == 'splitting':
         if input_freq == None:
             print 'Please provide a name of the file containing the list of the frequencies for the minimum using "-freq" flag'
@@ -250,16 +255,17 @@ elif case == 'instanton':
             sys.exit()
 
         print 'Our linear polymer has  %i' % (nbeads)
-        h0      = red2comp(hessian, nbeads, natoms)
         pos     = beads.q
         m3      = beads.m3
         omega2  = (temp * nbeads * kb / hbar) ** 2
         # spring  = SpringMapper.spring_hessian(natoms,nbeads,beads.m3[0],omega2,mode='half')
-        spring  = SpringMapper.spring_hessian(natoms, nbeads, beads.m3[0], omega2, mode='splitting')
-        h       = np.add(h0, spring)
-        if asr != 'none':
-            print 'We are changing asr to none since we consider a fixed ended linear polimer for the post-processing'
-            asr = 'none'
+        if not quiet:
+            h0      = red2comp(hessian, nbeads, natoms)
+            spring  = SpringMapper.spring_hessian(natoms, nbeads, beads.m3[0], omega2, mode='splitting')
+            h       = np.add(h0, spring)
+            if asr != 'none':
+                print 'We are changing asr to none since we consider a fixed ended linear polimer for the post-processing'
+                asr = 'none'
     else:
         print 'We can not recognize the mode. STOP HERE'
         sys.exit()
@@ -268,15 +274,15 @@ elif case == 'instanton':
 beta = 1.0/(kb*temp)
 betaP = 1.0/(kb*(nbeads)*temp)
 
-print ''
-print 'We used %i beads in the calculation.' % nbeads
 print 'We have %i atoms.' % natoms
 print 'We are using asr = %s'%asr
+print ''
 
-print 'Diagonalization....'
-d, w, detI = clean_hessian(h, pos, natoms, nbeads, m, m3, asr, mofi=True)
-print  "Final lowest 15 frequencies (cm^-1)"
-print   np.sign(d[0:15]) * np.absolute(d[0:15]) ** 0.5 / cm2au  # convert to cm^-1
+if not quiet and case=='instanton':
+    print 'Diagonalization....'
+    d, w, detI = clean_hessian(h, pos, natoms, nbeads, m, m3, asr, mofi=True)
+    print  "Final lowest 15 frequencies (cm^-1)"
+    print   np.sign(d[0:15]) * np.absolute(d[0:15]) ** 0.5 / cm2au  # convert to cm^-1
 
 if case == 'reactant':
     Qtras    = ( ( np.sum(m) ) / ( 2*np.pi*beta*hbar**2 ) )**1.5
@@ -340,23 +346,26 @@ elif case == 'instanton':
     if mode == 'rate':
         Qtras     = ( ( np.sum(m) ) / ( 2*np.pi*beta*hbar**2 ) )**1.5
 
-        if asr == 'poly':
+        if asr == 'poly' and not quiet:
+            print  detI, hbar,(betaP),nbeads     #Compute Qrot
             Qrot      = ( 8*np.pi*detI / ( (hbar)**6 * (betaP)**3 ))**0.5/(nbeads)**3    #Compute Qrot
         else:
             Qrot      = 1.0
 
-        print 'Note: Deleted frequency for computing Qvib  %f cm^-1' % (np.sign(d[1]) * np.absolute(d[1]) ** 0.5 / cm2au)
-        if asr != 'poly':
-            print 'WARNING asr != poly'
-            print 'First 10 eigenvalues'
-            print  (np.sign(d[0:10]) * np.absolute(d[0:10]) ** 0.5 / cm2au)
-            print "Please check that this you don't have any unwanted zero frequency"
-
-        logQvib = -np.sum( np.log( betaP*hbar*np.sqrt(np.absolute(np.delete(d, 1))) ))+6*np.log(nbeads)+np.log(nbeads)
-
+        if not quiet:
+            print 'Note: Deleted frequency for computing Qvib  %f cm^-1' % (np.sign(d[1]) * np.absolute(d[1]) ** 0.5 / cm2au)
+            if asr != 'poly':
+                print 'WARNING asr != poly'
+                print 'First 10 eigenvalues'
+                print  (np.sign(d[0:10]) * np.absolute(d[0:10]) ** 0.5 / cm2au)
+                print "Please check that this you don't have any unwanted zero frequency"
+            logQvib = -np.sum( np.log( betaP*hbar*np.sqrt(np.absolute(np.delete(d, 1))) ))+6*np.log(nbeads)+np.log(nbeads)
+        else:
+            logQvib = 0.0
+ 
         BN     =  2*np.sum(beads.m3[1:,:]*(beads.q[1:,:] - beads.q[:-1,:])**2)
-
-        action1 = (2*pots.sum() - nbeads * V0) * 1 / (temp * nbeads * kb)
+        factor = 1.0000 #default
+        action1 = (2*pots.sum()*factor - nbeads * V0) * 1. / (temp * nbeads * kb)
         action2 = spring_pot(nbeads, pos, omega2, m3) / (temp * nbeads * kb)
 
         print ''
@@ -398,8 +407,12 @@ elif case == 'instanton':
 
         BN      = np.sum(beads.m3[1:,:]*(beads.q[1:,:] - beads.q[:-1,:])**2)
 
-        inst    = np.sum(np.log(np.sqrt(np.delete(d, [0]))))
-        phi     = np.exp(inst-react)
+        if not quiet:
+            inst    = np.sum(np.log(np.sqrt(np.delete(d, [0]))))
+            phi     = np.exp(inst-react)
+        else:
+            phi =1
+
         tetaphi = betaP*hbar*np.sqrt(action/(2*hbar*np.pi))*np.exp(-action/hbar)
         teta    = tetaphi/phi
         h       = -teta/betaP
@@ -416,8 +429,12 @@ elif case == 'instanton':
         print 'BN %f a.u.' % BN
         print 'BN/(hbar^2 * betaN)  %f  (should be same as S/hbar) ' % (BN / ((hbar**2)*betaP))
         print ''
-        print 'phi %f a.u.   Teta %f a.u. '%(phi, tetaphi/phi)
-        print 'Tunnelling splitting matrix element (h)  %f a.u (%f cm^-1)' % (h, h/cm2au )
+        if quiet:
+            print 'phi is not computed because you specified the quiet option'
+            print 'We can provied only Tetaphi which value is %f a.u. '%(tetaphi)
+        else:
+            print 'phi %f a.u.   Teta %f a.u. '%(phi, tetaphi/phi)
+            print 'Tunnelling splitting matrix element (h)  %f a.u (%f cm^-1)' % (h, h/cm2au )
     else:
         print 'We can not recongnize the mode.'
         sys.exit()

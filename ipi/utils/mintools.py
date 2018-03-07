@@ -1257,12 +1257,16 @@ def nichols(f0, f1, d, dynmax, m3, big_step, mode=1):
                 alpha = (d[0] - d[1]) / d[1]
                 lamb = (d[0] + 3 * d[1]) / 4
 
+        #elif d[1] < 0:  #Litman for Second Order Saddle point
+        #    alpha = 1
+        #    lamb = (d[1] + d[2]) / 4
+        #    print 'WARNING: We are not using the standar Nichols'
+        #    print 'd_x', d_x[0],d_x[1]
         else:  # Only d[0] <0
             alpha = 1
             lamb = (d[0] + d[1]) / 4
 
         d_x = alpha * (gE) / (lamb - d)
-
     # Some check or any type of reject? ALBERTO
 
     DX = np.dot(dynmax, d_x)  # From ev base to mass-weighted base

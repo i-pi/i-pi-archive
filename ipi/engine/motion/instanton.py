@@ -408,7 +408,7 @@ class DummyOptimizer(dobject):
             else:
                 info("We are going to compute the final hessian", verbosity.low)
                 get_hessian(self.hessian, self.gm, self.im.dbeads.q)
-                print_instanton_hess(self.prefix, step, self.hessian)
+                print_instanton_hess(self.prefix+'_FINAL_', step, self.hessian)
 
             exitt = True #If we just exit here, the last step (including the last hessian) will not be in the RESTART file
 
@@ -439,7 +439,7 @@ class HessianOptimizer(DummyOptimizer):
             elif geop.hessian.size == 0 and geop.hessian_init == 'true':
                 info(" Initial hessian is not provided. We are going to compute it.", verbosity.low)
                 geop.hessian = np.zeros((self.beads.natoms*3, self.beads.q.size))
-                if ((self.beads.q - self.beads.q[0]) == 0).all():
+                if ((self.beads.q - self.beads.q[0]) == 0).all() and self.beads.nbeads>1:
                     raise ValueError("""We need a initial hessian in order to create our initial
                     instanton geometry. Please provide a (1-bead) hessian or an initial instanton geometry.""")
             else:
@@ -474,7 +474,7 @@ class HessianOptimizer(DummyOptimizer):
                 else:
                     info(" @GEOP: Starting from the provided geometry in the extended phase space", verbosity.low)
                     if not (self.initial_hessian is None):
-                        raise ValueError(" You have provided a hessian with size (3xnatoms)^2 but also geometry in the extended phase space (nbeads>1). Please check the inputs\n")
+                        raise ValueError(" You have to provided a hessian with size (3xnatoms)^2 but also geometry in the extended phase space (nbeads>1). Please check the inputs\n")
 
                 if self.hessian_init == 'true':
                     info(" @GEOP: We are computing the initial hessian", verbosity.low)
