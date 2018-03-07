@@ -311,7 +311,6 @@ class TrajectoryOutput(dobject):
             self.nout = 0
 
         data, dimension, units = self.system.trajs[self.what]  # gets the trajectory data that must be printed
-
         # quick-and-dirty way to check if a trajectory is "global" or per-bead
         # Checks to see if there is a list of files or just a single file.
         if hasattr(self.out, "__getitem__"):
@@ -324,6 +323,7 @@ class TrajectoryOutput(dobject):
                 raise ValueError("Selected bead index " + str(self.ibead) + " does not exist for trajectory " + self.what)
         else:
             self.write_traj(data, getkey(self.what), self.out, b=0, format=self.format, dimension=dimension, units=units, cell_units=self.cell_units, flush=doflush)
+        
 
     def write_traj(self, data, what, stream, b=0, format="xyz", dimension="", units="automatic", cell_units="automatic", flush=True):
         """Prints out a frame of a trajectory for the specified quantity and bead.
@@ -467,8 +467,8 @@ class CheckpointOutput(dobject):
         # Advance the step counter before saving, so next time the correct index will be loaded.
         if store:
             self.step += 1
-            self.simul.step += 1
             self.store()
+            self.status.step.store(self.simul.step+1)
 
         with open_function(filename, "w") as check_file:
             check_file.write(self.status.write(name="simulation"))
