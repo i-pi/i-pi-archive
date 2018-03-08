@@ -33,7 +33,7 @@
       <ensemble>
          <temperature units="kelvin"> 300.0 </temperature>
          <bias>
-            <force forcefield="driver" nbeads="1"></force>
+            <force forcefield="plumed" nbeads="1"></force>
          </bias>
       </ensemble>
       <motion mode="dynamics">
