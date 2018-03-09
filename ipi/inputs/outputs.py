@@ -107,7 +107,7 @@ class InputTrajectory(InputValue):
     attribs["cell_units"] = (InputAttribute, {"dtype": str, "default": "",
                                               "help": "The units for the cell dimensions."})
     attribs["bead"] = (InputAttribute, {"dtype": int, "default": -1,
-                                        "help": "Print out only the specified bead. A negative value means print all."})
+                                        "help": "Print out only the specified bead. A negative value means print only one every -(bead) beads, e.g. -2 means print just the even beads, -4 one every four and so on."})
     attribs["flush"] = (InputAttribute, {"dtype": int, "default": 1,
                                          "help": "How often should streams be flushed. 1 means each time, zero means never."})
 
