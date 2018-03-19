@@ -521,8 +521,6 @@ class HessianOptimizer(DummyOptimizer):
         self.old_u[:] = self.forces.pots
         self.old_f[:] = self.forces.f
 
-
-
 def Instanton(x0, f0, f1, h, update, asr, im, gm, big_step, opt, m):
     """Do one step. Update hessian for the new position. Update the position and force inside the mapper.
 

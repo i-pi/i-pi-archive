@@ -17,6 +17,10 @@
        <ensemble>
            <temperature units="kelvin">300</temperature>
        </ensemble>
+       <!-- This is not actually used since we comptue all the replicas -->
+       <normal_modes>
+          <open_paths> [ 0,1,2,3,4,5 ] </open_paths>
+       </normal_modes>
        <motion mode='instanton'>
            <instanton mode='rate'>
            <alt_out>10</alt_out>
