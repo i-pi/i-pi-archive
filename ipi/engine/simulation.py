@@ -12,6 +12,7 @@ choosing which properties to initialise, and which properties to output.
 
 
 import os
+import threading
 import time
 from copy import deepcopy
 
@@ -103,7 +104,7 @@ class Simulation(dobject):
 
         return simulation
 
-    def __init__(self, mode, syslist, fflist, outputs, prng, paratemp, step=0, tsteps=1000, ttime=0):
+    def __init__(self, mode, syslist, fflist, outputs, prng, smotion=None, step=0, tsteps=1000, ttime=0, threads=False):
         """Initialises Simulation class.
 
         Args:
@@ -111,7 +112,7 @@ class Simulation(dobject):
             syslist: A list of system objects
             fflist: A list of forcefield objects
             prng: A random number object.
-            paratemp: A parallel tempering helper class.
+            smotion: A "super-motion" class specifying what to do with different system replicas
             outputs: A list of output objects.
             step: An optional integer giving the current simulation time step.
                 Defaults to 0.
@@ -124,6 +125,7 @@ class Simulation(dobject):
         info(" # Initializing simulation object ", verbosity.low)
         self.prng = prng
         self.mode = mode
+        self.threading = threads
         dself = dd(self)
 
         self.syslist = syslist
@@ -131,6 +133,7 @@ class Simulation(dobject):
             s.prng = self.prng    # bind the system's prng to self prng
             s.init.init_stage1(s)
 
+        #! TODO - does this have any meaning now that we introduce the smotion class?
         if self.mode == "md" and len(syslist) > 1:
             warning("Multiple systems will evolve independently in a '" + self.mode + "' simulation.")
 
@@ -143,7 +146,7 @@ class Simulation(dobject):
         dself.step = depend_value(name="step", value=step)
         self.tsteps = tsteps
         self.ttime = ttime
-        self.paratemp = paratemp
+        self.smotion = smotion
 
         self.chk = None
         self.rollback = True
@@ -182,9 +185,8 @@ class Simulation(dobject):
         self.chk = eoutputs.CheckpointOutput("RESTART", 1, True, 0)
         self.chk.bind(self)
 
-        if self.mode == "paratemp":
-            self.paratemp.bind(self.syslist, self.prng)
-            softexit.register_function(self.paratemp.softexit)
+        if not self.smotion is None:
+            self.smotion.bind(self.syslist, self.prng)
 
     def softexit(self):
         """Deals with a soft exit request.
@@ -196,9 +198,9 @@ class Simulation(dobject):
         if self.step < self.tsteps:
             self.step += 1
         if not self.rollback:
+            info("SOFTEXIT: Saving the latest status at the end of the step")
             self.chk.store()
 
-        print "WRITING CHECKPOINT", self.chk.status.extra
         self.chk.write(store=False)
 
     def run(self):
@@ -220,27 +222,21 @@ class Simulation(dobject):
         if self.step == 0:
             self.step = -1
             # must use multi-threading to avoid blocking in multi-system runs with WTE
-            stepthreads = []
-            for o in self.outputs:
-                o.write()  # threaded output seems to cause random hang-ups. should make things properly thread-safe
-                #st = threading.Thread(target=o.write, name=o.filename)
-                #st.daemon = True
-                # st.start()
-                # stepthreads.append(st)
+            if self.threading:
+                stepthreads = []
+                for o in self.outputs:                    
+                    st = threading.Thread(target=o.write, name=o.filename)
+                    st.daemon = True
+                    st.start()
+                    stepthreads.append(st)
 
-            for st in stepthreads:
-                while st.isAlive():
-                    # This is necessary as join() without timeout prevents main
-                    # from receiving signals.
-                    st.join(2.0)
-
-            if self.mode == "paratemp":
-                self.paratemp.parafile.write("%10d" % (self.step + 1))
-                for i in self.paratemp.temp_index:
-                    self.paratemp.parafile.write(" %5d" % i)
-                self.paratemp.parafile.write("\n")
-                self.paratemp.parafile.flush()
-                os.fsync(self.paratemp.parafile)
+                for st in stepthreads:
+                    while st.isAlive():
+                        # This is necessary as join() without timeout prevents main from receiving signals.
+                        st.join(2.0)
+            else:
+                for o in self.outputs:
+                    o.write()  # threaded output seems to cause random hang-ups. should make things properly thread-safe
 
             self.step = 0
 
@@ -253,7 +249,7 @@ class Simulation(dobject):
         #tttime = 0.0
         ttot = 0.0
         # main MD loop
-        for self.step in range(self.step, self.tsteps):
+        for self.step in xrange(self.step, self.tsteps):
             # stores the state before doing a step.
             # this is a bit time-consuming but makes sure that we can honor soft
             # exit requests without screwing the trajectory
@@ -264,47 +260,52 @@ class Simulation(dobject):
 
             self.chk.store()
 
-            stepthreads = []
-            # steps through all the systems
-            # for s in self.syslist:
-            #   s.ensemble.step()
-            for s in self.syslist:
-                # creates separate threads for the different systems
-                #st = threading.Thread(target=s.motion.step, name=s.prefix, kwargs={"step":self.step})
-                #st.daemon = True
-                s.motion.step(step=self.step)
-                # st.start()
-                # stepthreads.append(st)
+            if self.threading:
+                stepthreads = []
+                # steps through all the systems
+                for s in self.syslist:
+                    # creates separate threads for the different systems
+                    st = threading.Thread(target=s.motion.step, name=s.prefix, kwargs={"step": self.step})
+                    st.daemon = True
+                    st.start()
+                    stepthreads.append(st)
 
-            for st in stepthreads:
-                while st.isAlive():
-                    # This is necessary as join() without timeout prevents main
-                    # from receiving signals.
-                    st.join(2.0)
+                for st in stepthreads:
+                    while st.isAlive():
+                        # This is necessary as join() without timeout prevents main from receiving signals.
+                        st.join(2.0)
+            else:
+                for s in self.syslist:
+                    s.motion.step(step=self.step)
 
             if softexit.triggered:
                 # Don't continue if we are about to exit.
                 break
 
-            for o in self.outputs:  # write possible checkpoints before doing any
-                o.write()
-
-            # does parallel tempering
-            if self.mode == "paratemp":
-
-                # because of where this is in the loop, we must write out BEFORE doing the swaps.
-                self.paratemp.parafile.write("%10d" % (self.step + 1))
-                for i in self.paratemp.temp_index:
-                    self.paratemp.parafile.write(" %5d" % i)
-                self.paratemp.parafile.write("\n")
-                self.paratemp.parafile.flush()
-                os.fsync(self.paratemp.parafile)
-
-                self.paratemp.swap(self.step)
+            # does the "super motion" step
+            if self.smotion is not None:
+                # TODO: We need a file where we store the exchanges
+                self.smotion.step(self.step)
 
             if softexit.triggered:
                 # Don't write if we are about to exit.
                 break
+
+            if self.threading:
+                stepthreads = []
+                for o in self.outputs:
+                    st = threading.Thread(target=o.write, name=o.filename)
+                    st.daemon = True
+                    st.start()
+                    stepthreads.append(st)
+
+                for st in stepthreads:
+                    while st.isAlive():
+                        # This is necessary as join() without timeout prevents main from receiving signals.
+                        st.join(2.0)
+            else:
+                for o in self.outputs:
+                    o.write()
 
             steptime += time.time()
             ttot += steptime

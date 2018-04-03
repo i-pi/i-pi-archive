@@ -78,7 +78,6 @@ class Motion(dobject):
         self.prng = prng
         self.nm = nm
         self.ensemble = ens
-        self.bias = self.ensemble.bias
 
     def step(self, step=None):
         """Dummy simulation time step which does nothing."""

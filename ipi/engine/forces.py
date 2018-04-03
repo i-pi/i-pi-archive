@@ -91,12 +91,11 @@ class ForceBead(dobject):
         """
 
         global fbuid  # assign a unique identifier to each forcebead object
-        self._threadlock.acquire()
-        try:
+        with self._threadlock:
             self.uid = fbuid
             fbuid += 1
-        finally:
-            self._threadlock.release()
+
+
 
         # stores a reference to the atoms and cell we are computing forces for
         self.atoms = atoms
@@ -140,12 +139,9 @@ class ForceBead(dobject):
         all the jobs to be sent at once, allowing them to be parallelized.
         """
 
-        self._threadlock.acquire()
-        try:
+        with self._threadlock:
             if self.request is None and dd(self).ufvx.tainted():
                 self.request = self.ff.queue(self.atoms, self.cell, reqid=self.uid)
-        finally:
-            self._threadlock.release()
 
     def get_all(self):
         """Driver routine.
@@ -162,11 +158,8 @@ class ForceBead(dobject):
         # because we thread over many systems and outputs, we might get called
         # more than once. keep track of how many times we are called so we
         # can make sure to wait until the last call has returned before we release
-        self._threadlock.acquire()
-        try:
+        with self._threadlock:
             self._getallcount += 1
-        finally:
-            self._threadlock.release()
 
         # this is converting the distribution library requests into [ u, f, v ]  lists
         if self.request is None:
@@ -193,11 +186,8 @@ class ForceBead(dobject):
         result = self.request["result"]
 
         # reduce the reservation count (and wait for all calls to return)
-        self._threadlock.acquire()
-        try:
+        with self._threadlock:
             self._getallcount -= 1
-        finally:
-            self._threadlock.release()
 
         # releases just once, but wait for all requests to be complete
         if self._getallcount == 0:
@@ -264,8 +254,8 @@ class ForceComponent(dobject):
        _forces: A list of the forcefield objects for all the replicas.
        weight: A float that will be used to weight the contribution of this
           forcefield to the total force.
-       mts_weights: A float that will be used to weight the contribution of this
-          forcefield to the total force.
+       mts_weights: A list of floats that will be used to weight the 
+          contribution of this forcefield at each level of a MTS scheme
        ffield: A model to be used to create the forcefield objects for all
           the replicas of the system.
 
@@ -300,7 +290,7 @@ class ForceComponent(dobject):
         self.ffield = ffield
         self.name = name
         self.nbeads = nbeads
-        self.weight = weight
+        self.weight = depend_value(name="weight", value=weight)
         if mts_weights is None:
             self.mts_weights = np.asarray([])
         else:
@@ -439,6 +429,59 @@ class ForceComponent(dobject):
         return vir
 
 
+class ScaledForceComponent(dobject):
+    def __init__(self, baseforce, scaling=1):
+
+        self.bf = baseforce
+        self.name = baseforce.name
+        self.ffield = baseforce.ffield
+        dself = dd(self)
+        dself.scaling = depend_value(name="scaling", value=scaling)
+        dself.f = depend_array(name="f",
+                                     func=lambda: self.scaling * self.bf.f if scaling != 0 else np.zeros((self.bf.nbeads, 3 * self.bf.natoms)),
+                                     value=np.zeros((self.bf.nbeads, 3 * self.bf.natoms)),
+                                     dependencies=[dd(self.bf).f, dself.scaling])
+        dself.pots = depend_array(name="pots",
+                                        func=lambda: self.scaling * self.bf.pots if scaling != 0 else np.zeros(self.bf.nbeads),
+                                        value=np.zeros(self.bf.nbeads),
+                                        dependencies=[dd(self.bf).pots, dself.scaling])
+        dself.virs = depend_array(name="virs", func=lambda: self.scaling * self.bf.virs,
+                                        value=np.zeros((self.bf.nbeads, 3, 3)),
+                                        dependencies=[dd(self.bf).virs, dself.scaling])
+        dself.extras = depend_array(name="extras", func=lambda: self.bf.extras,
+                                          value=np.zeros(self.bf.nbeads),
+                                          dependencies=[dd(self.bf).extras])
+
+        # total potential and total virial
+        dself.pot = depend_value(name="pot", func=(lambda: self.pots.sum()),
+                          dependencies=[dself.pots])
+        dself.vir = depend_array(name="vir", func=self.get_vir, value=np.zeros((3, 3)),
+                          dependencies=[dself.virs])
+
+        # pipes weight from the force, since the scaling is applied on top of that
+        self.weight = depend_value(name="weight", value=0)
+        dpipe(dd(self.bf).weight, dself.weight)
+        self.mts_weights = self.bf.mts_weights
+
+    def get_vir(self):
+        """Sums the virial of each replica.
+
+        Not the actual system virial, as it has not been divided by either the
+        number of beads or the cell volume.
+
+        Returns:
+            Virial sum.
+        """
+
+        vir = np.zeros((3, 3))
+        for v in dstrip(self.virs):
+            vir += v
+        return vir
+
+    def queue(self):
+        pass  # this should be taken care of when the force/potential/etc is accessed
+
+
 class Forces(dobject):
     """Class that gathers all the forces together.
 
@@ -472,6 +515,18 @@ class Forces(dobject):
         self.dforces = None
         self.dbeads = None
         self.dcell = None
+
+    def add_component(self, nbeads, nrpc, nforces):
+        self.mrpc.append(nrpc)
+        self.mbeads.append(nbeads)
+        self.mforces.append(nforces)
+        self.nforces += 1
+        dself = dd(self)
+        dforces = dd(nforces)
+        dself.f.add_dependency(dforces.f)
+        dself.pots.add_dependency(dforces.pots)
+        dself.virs.add_dependency(dforces.virs)
+        dself.extras.add_dependency(dforces.extras)
 
     def bind(self, beads, cell, fcomponents, fflist):
         """Binds beads, cell and forces to the forcefield.

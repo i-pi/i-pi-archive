@@ -28,9 +28,8 @@
         <tolerances>
           <energy> 1.0e-7 </energy>
           <force> 1.0e-3 </force>
-          <position> 1.0e-7 </position>
+          <position> 1.0e-4 </position>
         </tolerances>
-        <maximum_step> 150.0 </maximum_step>
       </optimizer>
     </motion>
   </system>

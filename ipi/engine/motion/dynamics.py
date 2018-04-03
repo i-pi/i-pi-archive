@@ -160,10 +160,15 @@ class Dynamics(Motion):
         dpipe(dd(self.ensemble).pext, dbarostat.pext)
         dpipe(dd(self.ensemble).stressext, dbarostat.stressext)
 
-        self.barostat.bind(beads, nm, cell, bforce, prng=prng, fixdof=fixdof)
+        #!TODO the barostat should also be connected to the bias stress
+        self.barostat.bind(beads, nm, cell, bforce, prng=prng, fixdof=fixdof, bias=ens.bias)
 
         self.ensemble.add_econs(dd(self.thermostat).ethermo)
         self.ensemble.add_econs(dd(self.barostat).ebaro)
+
+        # adds potential and kinetic energy for the barostat to the ensemble
+        self.ensemble.add_xlpot(dd(self.barostat).pot)
+        self.ensemble.add_xlkin(dd(self.barostat).kin)
 
         #!TODO THOROUGH CLEAN-UP AND CHECK
         # if self.enstype in ["nvt", "npt", "nst"]:
@@ -198,7 +203,7 @@ class DummyIntegrator(dobject):
         """ Reference all the variables for simpler access."""
 
         self.beads = motion.beads
-        self.bias = motion.bias
+        self.bias = motion.ensemble.bias
         self.ensemble = motion.ensemble
         self.forces = motion.forces
         self.prng = motion.prng
@@ -518,6 +523,7 @@ class SCIntegrator(NVEIntegrator):
 
         super(SCIntegrator, self).bind(mover)
         self.ensemble.add_econs(dd(self.forces).potsc)
+        self.ensemble.add_xlpot(dd(self.forces).potsc)
 
     def pstep(self):
         """Velocity Verlet momenta propagator."""

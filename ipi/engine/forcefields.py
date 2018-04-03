@@ -20,9 +20,11 @@ from ipi.utils.messages import info
 from ipi.interfaces.sockets import InterfaceSocket
 from ipi.utils.depend import dobject
 from ipi.utils.depend import dstrip
+from ipi.utils.io import read_file
+from ipi.utils.units import unit_to_internal
 
 
-__all__ = ['ForceField', 'FFSocket', 'FFLennardJones', 'FF2Body', 'FFDebye', 'FFYaff']
+__all__ = ['ForceField', 'FFSocket', 'FFLennardJones', 'FFDebye', 'FFPlumed', 'FFYaff']
 
 
 class ForceRequest(dict):
@@ -375,86 +377,6 @@ class FFLennardJones(ForceField):
         r["status"] = "Done"
 
 
-class FF2Body(ForceField):
-    """Basic fully pythonic force provider.
-
-    Computes harmonic interactions without for a two body system. 
-
-    Attributes:
-        parameters: A dictionary of the parameters used by the driver. Of the
-            form {'name': value}.
-        requests: During the force calculation step this holds a dictionary
-            containing the relevant data for determining the progress of the step.
-            Of the form {'atoms': atoms, 'cell': cell, 'pars': parameters,
-                         'status': status, 'result': result, 'id': bead id,
-                         'start': starting time}.
-    """
-
-    def __init__(self, latency=1.0e-3, name="", K=None, r0=None, pars=None, dopbc=False):
-        """Initialises FF2Body.
-
-        Args:
-           pars: Optional dictionary, giving the parameters needed by the driver.
-        """
-
-        # check input - PBCs are not implemented here
-        if dopbc:
-            raise ValueError("Periodic boundary conditions are not supported.")
-        super(FF2Body, self).__init__(latency, name, pars, dopbc=False)
-
-        if K is None:
-            raise ValueError("Must provide the Hessian for the harmonic interaction.")
-        if r0 is None:
-            raise ValueError("Must provide a reference configuration.")
-
-        self.K = K
-        self.r0 = r0
-
-    def poll(self):
-        """Polls the forcefield checking if there are requests that should
-        be answered, and if necessary evaluates the associated forces and energy."""
-
-        # We have to be thread-safe, as in multi-system mode this might get
-        # called by many threads at once.
-        self._threadlock.acquire()
-        try:
-            for r in self.requests:
-                if r["status"] == "Queued":
-                    r["status"] = "Running"
-                    r["t_dispatched"] = time.time()
-                    self.evaluate(r)
-        finally:
-            self._threadlock.release()
-
-    def evaluate(self, r):
-        """Just a silly function evaluating two body interaction"""
-
-        q = r["pos"].reshape((-1, 3))
-        nat = len(q)
-
-        if nat != 2: raise(ValueError("2Body potential is only defined for a system of two atoms."))
-
-        v = 0.0
-        f = np.zeros(q.shape)
-
-        x, y, z = (q[1] - q[0])
-        rx, ry, rz = np.abs(q[1] - q[0])
-        v = 0.5 * self.K[0] * (rx - self.r0[0])**2 + 0.5 * self.K[1] * (ry - self.r0[1])**2 + 0.5 * self.K[2] * (rz - self.r0[2])**2
-        f[0, 0] = self.K[0] * (rx - self.r0[0]) * np.sign(x)
-        f[0, 1] = self.K[1] * (ry - self.r0[1]) * np.sign(y)
-        f[0, 2] = self.K[2] * (rz - self.r0[2]) * np.sign(z)
-        f[1, 0] = -f[0, 0]
-        f[1, 1] = -f[0, 1]
-        f[1, 2] = -f[0, 2]
-
-        # print "avg separation is:", rx, ry, rz
-        # print "potential is:", v
-
-        r["result"] = [v, f.reshape(nat * 3), np.zeros((3, 3), float), ""]
-        r["status"] = "Done"
-
-################################################################################################################
-
 class FFDebye(ForceField):
     """Debye crystal harmonic reference potential
 
@@ -524,6 +446,140 @@ class FFDebye(ForceField):
         r["result"] = [self.vref + 0.5 * np.dot(d, mf), -mf, np.zeros((3, 3), float), ""]
         r["status"] = "Done"
         r["t_finished"] = time.time()
+
+
+try:
+    import plumed
+except:
+    plumed = None
+
+
+class FFPlumed(ForceField):
+    """Direct PLUMED interface
+
+    Computes forces from a PLUMED input. 
+
+    Attributes:
+        parameters: A dictionary of the parameters used by the driver. Of the
+            form {'name': value}.
+        requests: During the force calculation step this holds a dictionary
+            containing the relevant data for determining the progress of the step.
+            Of the form {'atoms': atoms, 'cell': cell, 'pars': parameters,
+                      'status': status, 'result': result, 'id': bead id,
+                      'start': starting time}.  
+    """
+
+    def __init__(self, latency=1.0e-3, name="", pars=None, dopbc=False, init_file="", plumeddat="", precision=8, plumedstep=0):
+        """Initialises FFPlumed.
+
+        Args:
+           pars: Optional dictionary, giving the parameters needed by the driver.
+        """
+
+        # a socket to the communication library is created or linked
+        if plumed is None:
+            raise ImportError("Cannot find plumed libraries to link to a FFPlumed object/")
+        super(FFPlumed, self).__init__(latency, name, pars, dopbc=False)
+        self.plumed = plumed.Plumed(precision)
+        self.precision = precision
+        self.plumeddat = plumeddat
+        self.plumedstep = plumedstep
+        self.init_file = init_file
+
+        if self.init_file.mode == "xyz":
+            infile = open(self.init_file.value, "r")
+            myframe = read_file(self.init_file.mode, infile)
+            myatoms = myframe['atoms']
+            mycell = myframe['cell']
+            myatoms.q *= unit_to_internal("length", self.init_file.units, 1.0)
+            mycell.h *= unit_to_internal("length", self.init_file.units, 1.0)
+
+        self.natoms = myatoms.natoms
+        self.plumed.cmd("setNatoms", self.natoms)
+        self.plumed.cmd("setPlumedDat", self.plumeddat)
+        self.plumed.cmd("setTimestep", 1.)
+        self.plumed.cmd("setMDEnergyUnits", 2625.4996)        # Pass a pointer to the conversion factor between the energy unit used in your code and kJ mol-1
+        self.plumed.cmd("setMDLengthUnits", 0.052917721)        # Pass a pointer to the conversion factor between the length unit used in your code and nm
+        self.plumed.cmd("setMDTimeUnits", 2.4188843e-05)
+        if self.plumedstep > 0:
+            # we are restarting, signal that PLUMED should continue
+            self.plumed.cmd("setRestart", 1)
+        self.plumed.cmd("init")
+        self.charges = dstrip(myatoms.q) * 0.0
+        self.masses = dstrip(myatoms.m)
+        self.lastq = np.zeros(3 * self.natoms)
+
+    def poll(self):
+        """Polls the forcefield checking if there are requests that should
+        be answered, and if necessary evaluates the associated forces and energy."""
+
+        # We have to be thread-safe, as in multi-system mode this might get
+        # called by many threads at once.
+        self._threadlock.acquire()
+        try:
+            for r in self.requests:
+                if r["status"] == "Queued":
+                    r["status"] = "Running"
+                    r["t_dispatched"] = time.time()
+                    self.evaluate(r)
+        finally:
+            self._threadlock.release()
+
+    def evaluate(self, r):
+        """A wrapper function to call the PLUMED evaluation routines
+        and return forces."""
+
+        if self.natoms != len(r["pos"]) / 3:
+            raise ValueError("Size of atom array changed after initialization of FFPlumed")
+
+        v = 0.0
+        f = np.zeros(3 * self.natoms)
+        vir = np.zeros((3, 3))
+
+        self.lastq[:] = r["pos"]
+        # for the moment these are set to dummy values taken from an init file.
+        # linking with the current value in simulations is non-trivial, as masses
+        # are not expected to be the force evaluator's business, and charges are not
+        # i-PI's business.
+        self.plumed.cmd("setStep", self.plumedstep)
+        self.plumed.cmd("setCharges", self.charges)
+        self.plumed.cmd("setMasses", self.masses)
+
+        # these instead are set properly. units conversion is done on the PLUMED side
+        self.plumed.cmd("setBox", r["cell"][0])
+        self.plumed.cmd("setPositions", r["pos"])
+        self.plumed.cmd("setForces", f)
+        self.plumed.cmd("setVirial", vir)
+        self.plumed.cmd("prepareCalc");
+        self.plumed.cmd("performCalcNoUpdate");
+
+        bias = np.zeros(1, float)
+        self.plumed.cmd("getBias", bias)
+        v = bias[0]
+
+        r["result"] = [v, f, vir, ""]
+        r["status"] = "Done"
+
+    def mtd_update(self, pos, cell):
+        """ Makes updates to the potential that only need to be triggered
+        upon completion of a time step. """
+
+        self.plumedstep += 1
+        f = np.zeros(3 * self.natoms)
+        vir = np.zeros((3, 3))
+
+        self.plumed.cmd("setStep", self.plumedstep)
+        self.plumed.cmd("setCharges", self.charges)
+        self.plumed.cmd("setMasses", self.masses)
+        self.plumed.cmd("setPositions", pos)
+        self.plumed.cmd("setBox", cell)
+        self.plumed.cmd("setForces", f)
+        self.plumed.cmd("setVirial", vir)
+        self.plumed.cmd("prepareCalc");
+        self.plumed.cmd("performCalcNoUpdate");
+        self.plumed.cmd("update")
+
+        return True
 
 
 class FFYaff(ForceField):
