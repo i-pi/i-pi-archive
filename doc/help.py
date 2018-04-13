@@ -30,7 +30,7 @@ src_dir = "../"
 
 sys.path.append(src_dir)
 
-from ipi.inputs import barostats, cell, simulation, paratemp, system, \
+from ipi.inputs import barostats, cell, simulation, system, \
     ensembles, thermostats, forcefields, forces, atoms, beads, \
     prng, initializer, normalmodes, outputs, motion
 
