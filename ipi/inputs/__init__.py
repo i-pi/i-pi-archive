@@ -7,4 +7,4 @@
 
 __all__ = ['barostats', 'cell', 'ensembles', 'thermostats', 'motion',
            'interface', 'forces', 'forcefields', 'atoms', 'beads', 'prng', 'outputs',
-           'normalmodes', 'initializer', 'system', 'paratemp', 'simulation']
+           'normalmodes', 'initializer', 'system', 'simulation']
