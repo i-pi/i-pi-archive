@@ -78,11 +78,13 @@ class Simulation(dobject):
         input_simulation.parse(xmlrestart.fields[0][1])
 
         # override verbosity if requested
-        if custom_verbosity is not None:
-            input_simulation.verbosity.value = custom_verbosity
+        if custom_verbosity is None:
+            # Get from the input file
+            custom_verbosity = input_simulation.verbosity.fetch()
+        input_simulation.verbosity.value = custom_verbosity
 
         # print banner if not suppressed and simulation verbose enough
-        if request_banner and input_simulation.verbosity.fetch() != 'quiet':
+        if request_banner and input_simulation.verbosity.value != 'quiet':
             banner()
 
         # create the simulation object
