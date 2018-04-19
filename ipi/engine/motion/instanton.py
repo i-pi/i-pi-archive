@@ -401,6 +401,10 @@ class DummyOptimizer(dobject):
                          (np.linalg.norm(self.forces.f.flatten() - self.old_f.flatten()) <= 1e-08)) \
                 and (x <= self.tolerances["position"]):
 
+            print_instanton_geo(self.prefix+'_FINAL', step, self.im.dbeads.nbeads, self.im.dbeads.natoms, self.im.dbeads.names,
+                            self.im.dbeads.q, self.old_u, self.cell, self.energy_shift)
+
+
             if self.hessian_final != 'true':
                 info("We are not going to compute the final hessian.", verbosity.low)
                 info("Warning, The current hessian is not the real hessian is only an approximation .", verbosity.low)
@@ -408,7 +412,7 @@ class DummyOptimizer(dobject):
             else:
                 info("We are going to compute the final hessian", verbosity.low)
                 get_hessian(self.hessian, self.gm, self.im.dbeads.q)
-                print_instanton_hess(self.prefix+'_FINAL_', step, self.hessian)
+                print_instanton_hess(self.prefix+'_FINAL', step, self.hessian)
 
             exitt = True #If we just exit here, the last step (including the last hessian) will not be in the RESTART file
 
