@@ -689,8 +689,8 @@ class Forces(dobject):
           dget(self, "pots").add_dependency(dget(fc, "weight"))
           dget(self, "virs").add_dependency(dget(fc, "weight"))
             
-      dset(self, "virsc", value=depend_value(name="potsc",
-            dependencies=[dget(self,"potssc")],
+      dset(self, "virsc", value=depend_value(name="virsc",
+            dependencies=[dget(self,"virssc")],
             func=(lambda: np.sum(self.virssc, axis=0)) ) )       
 
 
@@ -1082,6 +1082,15 @@ class Forces(dobject):
       # this evaluates the square forces contribution to the SC potential (only the difference with the Trotter potential is returned)
       return self.coeffsc_part_1.T * depstrip(self.pots) + self.coeffsc_part_2.T *  np.sum(depstrip(self.f) / self.beads.m3 * depstrip(self.f), axis=1)
       
+   def get_potssc_part_2(self):
+      """Obtains Suzuki-Chin contribution to the potential."""
+      if self.nbeads % 2 != 0:
+         warning("ERROR: Suzuki-Chin factorization requires even number of beads!")
+         exit()
+       
+      # this evaluates the square forces contribution to the SC potential (only the difference with the Trotter potential is returned)
+      return self.coeffsc_part_2.T *  np.sum(depstrip(self.f) / self.beads.m3 * depstrip(self.f), axis=1)
+
    def get_fsc_part_1(self):
       """Obtains the linear component of Suzuki-Chin correction to the force."""
       return self.coeffsc_part_1 * depstrip(self.f)

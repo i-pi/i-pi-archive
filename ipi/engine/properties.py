@@ -475,6 +475,10 @@ class Properties(dobject):
                       "help": "The Suzuki-Chin thermodynamic estimator for pressure of the physical system.",
                       "func": (lambda: np.trace(self.forces.vir + self.forces.virsc + self.kstress_sctd())/(3.0*self.cell.V*self.beads.nbeads))},
 
+      "pressure_scop": {"dimension": "pressure",
+                      "help": "The Suzuki-Chin thermodynamic estimator for pressure of the physical system.",
+                      "func": (lambda: 2.0 * np.trace(np.sum(self.forces.virs[::2], axis=0) + self.kstress_scop()) / (3.0*self.cell.V*self.beads.nbeads))},
+
       "kstress_cv":  {"dimension": "pressure",
                       "size" : 6,
                       "help": "The quantum estimator for the kinetic stress tensor of the physical system.",
@@ -1265,6 +1269,38 @@ class Properties(dobject):
 
       return rg_tot/float(ncount)
 
+   def kstress_scop(self):
+      """Calculates the quantum centroid virial kinetic stress tensor
+      estimator.
+
+      Note that this is not divided by the volume or the number of beads.
+
+      Returns:
+         A 3*3 tensor with all the components of the tensor.
+      """
+
+
+      kst = np.zeros((3,3),float)
+      q = depstrip(self.beads.q)
+      qc = depstrip(self.beads.qc)
+      pc = depstrip(self.beads.pc)
+      m = depstrip(self.beads.m)
+      fall = depstrip(self.forces.f)
+      virall = depstrip(self.forces.virs)
+      na3 = 3 * self.beads.natoms
+
+      for b in range(0,self.beads.nbeads,2):
+         for i in range(3):
+            for j in range(i,3):
+               kst[i,j] -= np.dot(q[b,i:na3:3] - qc[i:na3:3],
+                  fall[b,j:na3:3])
+
+      # return the CV estimator MULTIPLIED BY NBEADS -- again for consistency with the virial, kstress_MD, etc...
+      for i in range(3):
+         kst[i,i] += self.beads.nbeads * ( np.dot(pc[i:na3:3],pc[i:na3:3]/m) ) / 2.0
+      
+      return kst
+
    def kstress_sctd(self):
       """Calculates the quantum centroid virial kinetic stress tensor
       estimator.
@@ -1281,7 +1317,10 @@ class Properties(dobject):
       pc = depstrip(self.beads.pc)
       m = depstrip(self.beads.m)
       fall = depstrip(self.forces.f + self.forces.fsc)
+      fsc2 = depstrip(self.forces.fsc_part_2)
+
       na3 = 3*self.beads.natoms
+      potssc = 2.0 * (depstrip(self.forces.get_potssc_part_2())).sum()
 
       for b in range(self.beads.nbeads):
          for i in range(3):
@@ -1291,7 +1330,7 @@ class Properties(dobject):
 
       # return the CV estimator MULTIPLIED BY NBEADS -- again for consistency with the virial, kstress_MD, etc...
       for i in range(3):
-         kst[i,i] += self.beads.nbeads * ( np.dot(pc[i:na3:3],pc[i:na3:3]/m) )
+         kst[i,i] += self.beads.nbeads * (np.dot(pc[i:na3:3],pc[i:na3:3]/m))
 
       return kst
 
