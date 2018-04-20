@@ -466,14 +466,33 @@ class Properties(dobject):
                       "longhelp": """The total quantum estimator for the stress tensor of the physical system. Returns the
                       6 independent components in the form [xx, yy, zz, xy, xz, yz].""",
                       "func": (lambda: self.tensor2vec(self.forces.vir + self.kstress_cv())/(self.cell.V*self.beads.nbeads))},
+      "pressure_opsc": {"dimension": "pressure",
+                      "help": "The Suzuki-Chin thermodynamic estimator for pressure of the physical system.",
+                      "func": (lambda: np.trace(self.stress_opsc()) / 3.0)},
+
+      "kstress_opsc": {"dimension": "pressure",
+                      "help": "The Suzuki-Chin thermodynamic estimator for pressure of the physical system.",
+                      "func": (lambda: np.trace(self.kstress_opsc()) / 3.0)},
+
+      "vir_opsc": {"dimension": "pressure",
+                      "help": "The Suzuki-Chin thermodynamic estimator for pressure of the physical system.",
+                      "func": (lambda: np.trace(self.vir_opsc()) / 3.0)},
+
+      "pressure_tdsc": {"dimension": "pressure",
+                      "help": "The Suzuki-Chin thermodynamic estimator for pressure of the physical system.",
+                      "func": (lambda: np.trace(self.forces.vir + self.forces.virsc + self.kstress_sctd())/(3.0*self.cell.V*self.beads.nbeads))},
+
+      "vir_tdsc": {"dimension": "pressure",
+                      "help": "The Suzuki-Chin thermodynamic estimator for pressure of the physical system.",
+                      "func": (lambda: np.trace(self.forces.vir + self.forces.virsc)/(3.0*self.cell.V*self.beads.nbeads))},
+
+      "kstress_tdsc": {"dimension": "pressure",
+                      "help": "The Suzuki-Chin thermodynamic estimator for pressure of the physical system.",
+                      "func": (lambda: np.trace(self.kstress_sctd())/(3.0*self.cell.V*self.beads.nbeads))},
 
       "pressure_cv": {"dimension": "pressure",
                       "help": "The quantum estimator for pressure of the physical system.",
                       "func": (lambda: np.trace(self.forces.vir + self.kstress_cv())/(3.0*self.cell.V*self.beads.nbeads))},
-
-      "pressure_sctd": {"dimension": "pressure",
-                      "help": "The Suzuki-Chin thermodynamic estimator for pressure of the physical system.",
-                      "func": (lambda: np.trace(self.forces.vir + self.forces.virsc + self.kstress_sctd())/(3.0*self.cell.V*self.beads.nbeads))},
 
       "kstress_cv":  {"dimension": "pressure",
                       "size" : 6,
@@ -1264,6 +1283,98 @@ class Properties(dobject):
          raise IndexError("Couldn't find an atom which matched the argument of r_gyration")
 
       return rg_tot/float(ncount)
+
+   def vir_opsc(self):
+      """Calculates the quantum centroid virial kinetic stress tensor
+      estimator.
+
+      Note that this is not divided by the volume or the number of beads.
+
+      Returns:
+         A 3*3 tensor with all the components of the tensor.
+      """
+
+      st = np.zeros((3,3),float)
+      q = depstrip(self.beads.q)
+      qc = depstrip(self.beads.qc)
+      pc = depstrip(self.beads.pc)
+      m = depstrip(self.beads.m)
+      fall = depstrip(self.forces.f)
+      na3 = 3*self.beads.natoms
+
+      for b in range(0,self.beads.nbeads,2):
+         for i in range(3):
+            for j in range(i,3):
+               st[i,j] += vall[b,i,j]
+
+      st = st * 2.0 / self.beads.nbeads / self.cell.V
+
+      return st
+
+   def kstress_opsc(self):
+      """Calculates the quantum centroid virial kinetic stress tensor
+      estimator.
+
+      Note that this is not divided by the volume or the number of beads.
+
+      Returns:
+         A 3*3 tensor with all the components of the tensor.
+      """
+
+      st = np.zeros((3,3),float)
+      q = depstrip(self.beads.q)
+      qc = depstrip(self.beads.qc)
+      pc = depstrip(self.beads.pc)
+      m = depstrip(self.beads.m)
+      fall = depstrip(self.forces.f)
+      na3 = 3*self.beads.natoms
+
+      for b in range(0,self.beads.nbeads,2):
+         for i in range(3):
+            for j in range(i,3):
+               st[i,j] -= np.dot(q[b,i:na3:3] - qc[i:na3:3], fall[b,j:na3:3])
+
+      # return the CV estimator MULTIPLIED BY NBEADS -- again for consistency with the virial, kstress_MD, etc...
+      for i in range(3):
+         st[i,i] += self.beads.nbeads * ( np.dot(pc[i:na3:3],pc[i:na3:3]/m) ) * 0.50
+
+      st = st * 2.0 / self.beads.nbeads / self.cell.V
+
+      return st
+
+   def stress_opsc(self):
+      """Calculates the quantum centroid virial kinetic stress tensor
+      estimator.
+
+      Note that this is not divided by the volume or the number of beads.
+
+      Returns:
+         A 3*3 tensor with all the components of the tensor.
+      """
+
+      st = np.zeros((3,3),float)
+      q = depstrip(self.beads.q)
+      qc = depstrip(self.beads.qc)
+      pc = depstrip(self.beads.pc)
+      m = depstrip(self.beads.m)
+      fall = depstrip(self.forces.f)
+      vall = depstrip(self.forces.virs)
+      na3 = 3*self.beads.natoms
+
+      for b in range(0,self.beads.nbeads,2):
+         for i in range(3):
+            for j in range(i,3):
+               st[i,j] -= np.dot(q[b,i:na3:3] - qc[i:na3:3], fall[b,j:na3:3])
+               st[i,j] += vall[b,i,j]
+
+      # return the CV estimator MULTIPLIED BY NBEADS -- again for consistency with the virial, kstress_MD, etc...
+      for i in range(3):
+         st[i,i] += self.beads.nbeads * ( np.dot(pc[i:na3:3],pc[i:na3:3]/m) ) * 0.50
+
+      st = st * 2.0 / self.beads.nbeads / self.cell.V
+
+      return st
+
 
    def kstress_sctd(self):
       """Calculates the quantum centroid virial kinetic stress tensor
