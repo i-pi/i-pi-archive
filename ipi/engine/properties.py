@@ -499,14 +499,14 @@ class Properties(dobject):
                       "help": "The quantum estimator for the kinetic stress tensor of the physical system.",
                       "longhelp": """The quantum estimator for the kinetic stress tensor of the physical system.
                       Returns the 6 independent components in the form [xx, yy, zz, xy, xz, yz].""",
-                      "func": (lambda: self.tensor2vec(self.kstress_cv()/(self.cell.V*self.beads.nbeads)))},
+                      "func": (lambda:  np.trace(self.kstress_cv()/(3.0 * self.cell.V*self.beads.nbeads)))},
 
       "virial_cv": {  "dimension": "pressure",
                       "size" : 6,
                       "help": "The quantum estimator for the virial stress tensor of the physical system.",
                       "longhelp": """The quantum estimator for the virial stress tensor of the physical system.
                       Returns the 6 independent components in the form [xx, yy, zz, xy, xz, yz].""",
-                      "func": (lambda: self.tensor2vec(self.forces.vir/(self.cell.V*self.beads.nbeads)))},
+                      "func": (lambda: np.trace(self.forces.vir/(3.0 * self.cell.V*self.beads.nbeads)))},
 
       "displacedpath": {  "dimension": "undefined",
                       "help": "The displaced path end-to-end distribution estimator",
@@ -1300,6 +1300,7 @@ class Properties(dobject):
       pc = depstrip(self.beads.pc)
       m = depstrip(self.beads.m)
       fall = depstrip(self.forces.f)
+      vall = depstrip(self.forces.virs)
       na3 = 3*self.beads.natoms
 
       for b in range(0,self.beads.nbeads,2):
@@ -1392,13 +1393,16 @@ class Properties(dobject):
       pc = depstrip(self.beads.pc)
       m = depstrip(self.beads.m)
       fall = depstrip(self.forces.f + self.forces.fsc)
+      f = depstrip(self.forces.f)
+      fbym = depstrip(self.forces.f) / depstrip(self.beads.m3)
+      cfsc = self.forces.coeffsc_part_2
       na3 = 3*self.beads.natoms
 
       for b in range(self.beads.nbeads):
          for i in range(3):
             for j in range(i,3):
                kst[i,j] -= np.dot(q[b,i:na3:3] - qc[i:na3:3],
-                  fall[b,j:na3:3])
+                  fall[b,j:na3:3]) #- 2.0 * cfsc[b] * np.dot(f[b,i:na3:3], fbym[b,j:na3:3]) 
 
       # return the CV estimator MULTIPLIED BY NBEADS -- again for consistency with the virial, kstress_MD, etc...
       for i in range(3):
