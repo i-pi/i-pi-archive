@@ -981,6 +981,7 @@ class Forces(dobject):
                v_4th_order = 2.0 * (vminus - vplus) / 2.0 / delta
 
       # returns the 4th order |f^2| correction.
+
       return [f_4th_order, v_4th_order]
 
    def vir_mts(self, level):
@@ -1032,6 +1033,7 @@ class Forces(dobject):
             fv = depstrip(self.forcesvirs_4th_order(k))
             rf += self.mforces[k].weight * self.mforces[k].mts_weights.sum() * fv[0]
             rv += self.mforces[k].weight * self.mforces[k].mts_weights.sum() * fv[1]
+
       return [rf, rv]
 
    def pot_combine(self):
@@ -1105,7 +1107,20 @@ class Forces(dobject):
 
    def get_virssc_part_2(self):
       """Obtains the quadratic component of Suzuki-Chin correction to the force."""
-      return self.coeffsc_part_2.reshape((self.beads.nbeads, 1, 1)) * depstrip(self.virs_4th_order)
+
+      r = self.coeffsc_part_2.reshape((self.beads.nbeads, 1, 1)) * depstrip(self.virs_4th_order)
+
+      f = depstrip(self.f)
+      fbym = depstrip(self.f) / depstrip(self.beads.m3)
+      cfsc = depstrip(self.coeffsc_part_2)
+      na3 = 3*self.beads.natoms
+
+      for b in range(self.beads.nbeads):
+         for i in range(3):
+            for j in range(i,3):
+               r[b][i,j] += 2.0 * cfsc[b] * np.dot(f[b,i:na3:3], fbym[b,j:na3:3])
+
+      return r
 
    def get_fsc(self):
       """Obtains the total Suzuki-Chin correction to the force."""
