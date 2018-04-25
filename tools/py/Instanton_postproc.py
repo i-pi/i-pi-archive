@@ -278,7 +278,7 @@ print 'We have %i atoms.' % natoms
 print 'We are using asr = %s'%asr
 print ''
 
-if not quiet and case=='instanton':
+if not quiet:
     print 'Diagonalization....'
     d, w, detI = clean_hessian(h, pos, natoms, nbeads, m, m3, asr, mofi=True)
     print  "Final lowest 15 frequencies (cm^-1)"
