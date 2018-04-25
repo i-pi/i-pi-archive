@@ -172,7 +172,8 @@ if input_hess != 'None' or chk !='None':
     size2 = size0 *  nbeadsNew
 
     new_h = np.zeros([size0, size2])
-    
+    rpc = nm_rescale(nbeads, nbeadsNew,np.asarray(range(1))) #We use open path RPC
+
     for i in range(size0):
         for j in range(size0):
             h = np.array([])
