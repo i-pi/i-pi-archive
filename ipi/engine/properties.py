@@ -160,6 +160,7 @@ def help_latex(idict, standalone=True):
 
 
 class Properties(dobject):
+
     """A proxy to compute and output properties of the system.
 
     Takes the fundamental properties calculated during the simulation, and
@@ -284,18 +285,18 @@ class Properties(dobject):
 
             "pot_component": {"dimension": "energy",
                               "help": "The contribution to the system potential from one of the force components. ",
-                              "longhelp": """The contribution to the system potential from one of the force components. 
-                       Takes one mandatory argument index (zero-based) that indicates which component of the 
-                       potential must be returned. The optional argument 'bead' will print the potential associated 
+                              "longhelp": """The contribution to the system potential from one of the force components.
+                       Takes one mandatory argument index (zero-based) that indicates which component of the
+                       potential must be returned. The optional argument 'bead' will print the potential associated
                        with the specified bead. If the potential is weighed, the weight will be applied. """,
                               'func': (lambda index, bead="-1": self.forces.pots_component(int(index)).sum() / self.beads.nbeads if int(bead) < 0 else self.forces.pots_component(int(index))[int(bead)])},
 
             "pot_component_raw": {"dimension": "energy",
                                   "help": "The contribution to the system potential from one of the force components. ",
-                                  "longhelp": """The contribution to the system potential from one of the 
-                       force components. Takes one mandatory argument index (zero-based) that indicates 
+                                  "longhelp": """The contribution to the system potential from one of the
+                       force components. Takes one mandatory argument index (zero-based) that indicates
                        which component of the potential must be returned. The optional argument 'bead'
-                       will print the potential associated with the specified bead. Potential weights 
+                       will print the potential associated with the specified bead. Potential weights
                        will not be applied. """,
                                   'func': (lambda index, bead="-1": self.forces.pots_component(int(index), False).sum() / self.beads.nbeads if int(bead) < 0 else self.forces.pots_component(int(index), False)[int(bead)])},
 
@@ -339,9 +340,9 @@ class Properties(dobject):
 
             "kinetic_tdsc": {"dimension": "energy",
                              "help": "The Suzuki-Chin centroid-virial thermodynamic estimator of the quantum kinetic energy of the physical system.",
-                             "longhelp": """The Suzuki-Chin centroid-virial thermodynamic estimator of the quantum 
-                      kinetic energy of the physical system. Takes an argument 'atom', which can be either 
-                      an atom label or index (zero based) to specify which species to find the kinetic energy 
+                             "longhelp": """The Suzuki-Chin centroid-virial thermodynamic estimator of the quantum
+                      kinetic energy of the physical system. Takes an argument 'atom', which can be either
+                      an atom label or index (zero based) to specify which species to find the kinetic energy
                       of. If not specified, all atoms are used.""",
                              'func': self.get_sckintd},
 
@@ -605,32 +606,32 @@ class Properties(dobject):
                     "help": "The correction potential in Takahashi-Imada 4th-order PI expansion.",
                             "longhelp": """The correction potential in Takahashi-Imada 4th-order PI expansion.
                              Takes an argument 'atom', which can be either an atom label or index (zero based)
-                             to specify which species to find the correction term for. If not specified, 
+                             to specify which species to find the correction term for. If not specified,
                              all atoms are used."""},
 
          "isotope_zetatd_4th": {"dimension": "undefined",
                                 "size": 5,
                                 'func': self.get_isotope_zetatd_4th,
                                 "help": "4th order thermodynamic isotope fractionation direct estimator in the form of ratios of partition functions.",
-                                "longhelp": """Returns the (many) terms needed to compute the thermodynamic 
-                          fourth-order direct estimator. Takes two arguments, 'alpha' , which gives the 
-                          scaled mass parameter and default to '1.0', and 'atom', which is the label or 
-                          index of a type of atoms. The 5 numbers output are 1) the average over the 
-                          excess spring energy for an isotope atom substitution <spr>, 2) the average 
-                          of the squares of the excess spring energy <spr**2>, and 3) the average of 
-                          the exponential of excess spring energy <exp(-beta*spr)>, and 4-5) Suzuki-Chin 
+                                "longhelp": """Returns the (many) terms needed to compute the thermodynamic
+                          fourth-order direct estimator. Takes two arguments, 'alpha' , which gives the
+                          scaled mass parameter and default to '1.0', and 'atom', which is the label or
+                          index of a type of atoms. The 5 numbers output are 1) the average over the
+                          excess spring energy for an isotope atom substitution <spr>, 2) the average
+                          of the squares of the excess spring energy <spr**2>, and 3) the average of
+                          the exponential of excess spring energy <exp(-beta*spr)>, and 4-5) Suzuki-Chin
                           and Takahashi-Imada 4th-order reweighing term"""},
 
          "isotope_zetasc_4th": {"dimension": "undefined",
                                 "size": 5,
                                 'func': self.get_isotope_zetasc_4th,
                                 "help": "4th order scaled-coordinates isotope fractionation direct estimator in the form of ratios of partition functions.",
-                                "longhelp": """Returns the (many) terms needed to compute the scaled-coordinates 
-                          fourth-order direct estimator. Takes two arguments, 'alpha' , which gives the scaled 
-                          mass parameter and default to '1.0', and 'atom', which is the label or index of a type 
-                          of atoms. The 5 numbers output are 1) the average over the excess potential energy for 
-                          an isotope atom substitution <sc>, 2) the average of the squares of the excess potential 
-                          energy <sc**2>, and 3) the average of the exponential of excess potential energy 
+                                "longhelp": """Returns the (many) terms needed to compute the scaled-coordinates
+                          fourth-order direct estimator. Takes two arguments, 'alpha' , which gives the scaled
+                          mass parameter and default to '1.0', and 'atom', which is the label or index of a type
+                          of atoms. The 5 numbers output are 1) the average over the excess potential energy for
+                          an isotope atom substitution <sc>, 2) the average of the squares of the excess potential
+                          energy <sc**2>, and 3) the average of the exponential of excess potential energy
                           <exp(-beta*sc)>, and 4-5) Suzuki-Chin and Takahashi-Imada 4th-order reweighing term"""}
         }
 
@@ -2052,6 +2053,7 @@ class Properties(dobject):
 
 
 class Trajectories(dobject):
+
     """A simple class to take care of output of trajectory data.
 
     Attributes:

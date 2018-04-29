@@ -21,6 +21,7 @@ VERB_TRACE = 5
 
 
 class Verbosity(object):
+
     """Class used to determine what to print to standard output.
 
     Attributes:
@@ -100,7 +101,7 @@ def banner():
 
     print """
  ____       ____       ____       ____
-/    \     /    \     /    \     /    \ 
+/    \     /    \     /    \     /    \
 |  #################################  |
 \__#_/     \____/     \____/     \_#__/
    #    _        _______  _____    #

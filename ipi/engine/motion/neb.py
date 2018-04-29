@@ -35,6 +35,7 @@ __all__ = ['NEBMover']
 
 
 class NEBLineMover(object):
+
     """Creation of the one-dimensional function that will be minimized
 
     Attributes:
@@ -94,15 +95,15 @@ class NEBLineMover(object):
             btau[ii] = d1 / np.linalg.norm(d1) + d2 / np.linalg.norm(d2)
             btau[ii] *= 1.0 / np.linalg.norm(btau)
 
-#            # Energy of images: (ii+1) < (ii) < (ii-1)
+# Energy of images: (ii+1) < (ii) < (ii-1)
 #            if (be[ii + 1] < be[ii]) and (be[ii] < be[ii - 1]):
 #                btau[ii] = d2
 #
-#            # Energy of images (ii-1) < (ii) < (ii+1)
+# Energy of images (ii-1) < (ii) < (ii+1)
 #            elif (be[ii - 1] < be[ii]) and (be[ii] < be[ii + 1]):
 #                btau[ii] = d1
 #
-#            # Energy of image (ii) is a minimum or maximum
+# Energy of image (ii) is a minimum or maximum
 #            else:
 #                maxpot = max(be[ii + 1] - be[ii], be[ii - 1], be[ii])
 #                minpot = min(be[ii + 1] - be[ii], be[ii - 1], be[ii])
@@ -123,35 +124,35 @@ class NEBLineMover(object):
 
 #        if mode == "ci":
 #
-#        # Climbing NEB term. Choose highest energy bead after 5 (arbitrary) iterations
+# Climbing NEB term. Choose highest energy bead after 5 (arbitrary) iterations
 #            if step >= 5:
 #                imax = np.argmax(be)
 #                bf[imax] = bf[imax] - 2 * np.dot(bf[imax], btau[imax]) * btau[imax]
 #
-#                # Determine variable spring constants
-#                #kappa = np.zeros(nimg)
-#                #ei = np.zeros(nimg)
-#                #emax = np.amax(be)
-#                #eref = max(be[0], be[nimg])
-#                #kappamax = self.kappa_max
-#                #kappamin = self.kappa_min #TODO: input options for max and min spring constant
-#                #deltakappa = kappamax - kappamin
-#                #for ii in range(1, nimg - 1):
-#                #    ei[ii] = max(be[ii], be[ii - 1])
-#                #    if ei[j] > eref:
-#                #        kappa[ii] = kappamax - deltakappa * ((emax - ei[ii]) / (emax - eref))
-#                #    else:
-#                #        kappa[ii] = kappamin
+# Determine variable spring constants
+# kappa = np.zeros(nimg)
+# ei = np.zeros(nimg)
+# emax = np.amax(be)
+# eref = max(be[0], be[nimg])
+# kappamax = self.kappa_max
+# kappamin = self.kappa_min #TODO: input options for max and min spring constant
+# deltakappa = kappamax - kappamin
+# for ii in range(1, nimg - 1):
+# ei[ii] = max(be[ii], be[ii - 1])
+# if ei[j] > eref:
+# kappa[ii] = kappamax - deltakappa * ((emax - ei[ii]) / (emax - eref))
+# else:
+# kappa[ii] = kappamin
 #
 #        else:
 #            kappa.fill(self.kappa)
 #
 #
-#            # get perpendicular forces
+# get perpendicular forces
 #            for ii in range(1, nimg - 1):
 #                bf[ii] = bf[ii] - np.dot(bf[ii], btau[ii]) * btau[ii]
 #
-#            # adds the spring forces
+# adds the spring forces
 #            for ii in range(1, nimg - 1):
 #                bf[ii] += kappa[ii] * btau[ii] * np.dot(btau[ii], (bq[ii + 1] + bq[ii - 1] - 2 * bq[ii]))
 
@@ -180,6 +181,7 @@ class NEBLineMover(object):
 
 
 class NEBBFGSMover(object):
+
     """Creation of the multi-dimensional function that will be minimized
 
     Attributes:
@@ -227,8 +229,8 @@ class NEBBFGSMover(object):
             d2 = bq[ii + 1] - bq[ii]   # tau plus
 
             # Old implementation of NEB tangents
-            #btau[ii] = d1 / np.linalg.norm(d1) + d2 / np.linalg.norm(d2)
-            #btau[ii] *= 1.0 / np.linalg.norm(btau)
+            # btau[ii] = d1 / np.linalg.norm(d1) + d2 / np.linalg.norm(d2)
+            # btau[ii] *= 1.0 / np.linalg.norm(btau)
 
             # Energy of images: (ii+1) < (ii) < (ii-1)
             if (be[ii + 1] < be[ii]) and (be[ii] < be[ii - 1]):
@@ -259,25 +261,25 @@ class NEBBFGSMover(object):
 
 #        if mode == "ci":
 #
-#        # Climbing NEB term. Choose highest energy bead after 5 (arbitrary) iterations
+# Climbing NEB term. Choose highest energy bead after 5 (arbitrary) iterations
 #            if step >= 5:
 #                imax = np.argmax(be)
 #                bf[imax] = bf[imax] - 2 * np.dot(bf[imax], btau[imax]) * btau[imax]
 #
-#                # Determine variable spring constants
-#                #kappa = np.zeros(nimg)
-#                #ei = np.zeros(nimg)
-#                #emax = np.amax(be)
-#                #eref = max(be[0], be[nimg])
-#                #kappamax = self.spring["kappa_max"]
-#                #kappamin = self.spring["kappa_min"]
-#                #deltakappa = kappamax - kappamin
-#                #for ii in range(1, nimg - 1):
-#                #    ei[ii] = max(be[ii], be[ii - 1])
-#                #    if ei[j] > eref:
-#                #        kappa[ii] = kappamax - deltakappa * ((emax - ei[ii]) / (emax - eref))
-#                #    else:
-#                #        kappa[ii] = kappamin
+# Determine variable spring constants
+# kappa = np.zeros(nimg)
+# ei = np.zeros(nimg)
+# emax = np.amax(be)
+# eref = max(be[0], be[nimg])
+# kappamax = self.spring["kappa_max"]
+# kappamin = self.spring["kappa_min"]
+# deltakappa = kappamax - kappamin
+# for ii in range(1, nimg - 1):
+# ei[ii] = max(be[ii], be[ii - 1])
+# if ei[j] > eref:
+# kappa[ii] = kappamax - deltakappa * ((emax - ei[ii]) / (emax - eref))
+# else:
+# kappa[ii] = kappamin
 #
 #        else:
 #            kappa.fill(self.kappa)
@@ -293,7 +295,7 @@ class NEBBFGSMover(object):
         for ii in range(1, nimg - 1):
 
             # Old implementation
-            #bf[ii] += kappa[ii] * btau[ii] * np.dot(btau[ii], (bq[ii + 1] + bq[ii - 1] - 2 * bq[ii]))
+            # bf[ii] += kappa[ii] * btau[ii] * np.dot(btau[ii], (bq[ii + 1] + bq[ii - 1] - 2 * bq[ii]))
             bf[ii] += kappa[ii] * (np.linalg.norm(bq[ii + 1] - bq[ii]) - np.linalg.norm(bq[ii] - bq[ii - 1])) * btau[ii]
 
         # Return forces and modulus of gradient
@@ -303,6 +305,7 @@ class NEBBFGSMover(object):
 
 
 class NEBMover(Motion):
+
     """Nudged elastic band routine.
 
     Attributes:

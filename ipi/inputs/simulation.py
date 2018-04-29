@@ -32,6 +32,7 @@ __all__ = ['InputSimulation']
 
 
 class InputSimulation(Input):
+
     """Simulation input class.
 
     Handles generating the appropriate forcefield class from the xml input file,

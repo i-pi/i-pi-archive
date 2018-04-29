@@ -13,6 +13,7 @@ from ipi.utils.depend import dobject
 
 
 class Motion(dobject):
+
     """Base motion calculation class.
 
     Gives the standard methods and attributes needed in all the

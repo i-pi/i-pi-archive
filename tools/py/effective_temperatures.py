@@ -3,8 +3,8 @@
 __author__ = 'Igor Poltavsky'
 
 """ effective_temperatures.py
-The script reads the forces from from standard i-PI output files and computes the effective temperatures 
-for all degrees of freedom. The output is saved to 'prefix.effective_temperatures.dat' file which is located 
+The script reads the forces from from standard i-PI output files and computes the effective temperatures
+for all degrees of freedom. The output is saved to 'prefix.effective_temperatures.dat' file which is located
 in the folder which contains the input files. The results are printed out in the format: "atom",
 "effective temperatures for x, y, and z directions", and "average effective temperature".
 
@@ -16,7 +16,7 @@ forces </trajectory>
 Syntax:
    python effective_temperatures.py "prefix" "simulation temperature (in Kelvin)"
    "number of time frames to skip in the beginning of each file (default 0)"
-   
+
 The computed effective temperatures are in Kelvin.
 """
 

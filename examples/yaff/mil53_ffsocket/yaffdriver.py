@@ -18,6 +18,7 @@ L_CHAR = 1
 
 
 class MySocket(object):
+
     def __init__(self, servername, mode='unix', port=31415, verbose=False):
         if mode == 'unix':
             # Create a client socket
@@ -67,6 +68,7 @@ class MySocket(object):
 
 
 class YAFFDriver(object):
+
     '''
     Use Yaff as a driver that calculates forces for i-PI
     '''
@@ -118,9 +120,9 @@ class YAFFDriver(object):
         # Run indefinitely (until i-PI sends exit message)
         while True:
             with timer.section("WAITHEADER"):
-                #log("WAITHEADER %s" % datetime.now())
+                # log("WAITHEADER %s" % datetime.now())
                 header = self.s.await_header()
-                #log("GOTHEADER %s" % datetime.now())
+                # log("GOTHEADER %s" % datetime.now())
             if header == Message("status"):
                 if not self.isinit:
                     self.s.send_header(Message("needinit"))
@@ -133,7 +135,7 @@ class YAFFDriver(object):
                 init = self.s.await_data(len_init * L_CHAR)
                 if log.do_high:
                     with log.section(self.log_name):
-                        #log( "YAFF driver initialized for pid %s (bead %d - %s)" % (os.getpid(), ibead, init) )
+                        # log( "YAFF driver initialized for pid %s (bead %d - %s)" % (os.getpid(), ibead, init) )
                         log("INIT %s" % datetime.now())
                 self.isinit = True
             elif header == Message("posdata"):
@@ -149,7 +151,7 @@ class YAFFDriver(object):
             elif header == Message("exit"):
                 if log.do_high:
                     with log.section(self.log_name):
-                        #log('i-PI finished, stopping Yaff driver')
+                        # log('i-PI finished, stopping Yaff driver')
                         log("EXIT %s" % datetime.now())
                 break
             else:

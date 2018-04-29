@@ -4,13 +4,13 @@ __author__ = 'Igor Poltavsky'
 
 """ heat_capacity_ppi.py
 The script reads the simulation time, potential energy, positions and forces from
-standard i-PI output files and computes the primitive heat capacity estimator and the PPI correction for each time 
+standard i-PI output files and computes the primitive heat capacity estimator and the PPI correction for each time
 frame. The output is saved to 'prefix.heat_capacity.dat' file which is located in the folder which contains the input
-files. The results are printed out in the format: "time frame", "improved heat capacity estimator", "primitive heat 
+files. The results are printed out in the format: "time frame", "improved heat capacity estimator", "primitive heat
 capacity estimator", "PPI correction".
 
 The script assumes that the input files are in 'xyz' format, with prefix.out (contains simulation time and
-potential energy among other output properties), prefix.pos_*.xyz (positions) and prefix.for_*.xyz (forces) naming 
+potential energy among other output properties), prefix.pos_*.xyz (positions) and prefix.for_*.xyz (forces) naming
 scheme. This would require the following lines in input.xml file:
 <properties filename='out' stride='n'> [step, time, potential] </properties>
 <trajectory filename='pos' stride='n' format='xyz' cell_units='angstrom'> positions </trajectory>

@@ -33,6 +33,7 @@ fbuid = 0
 
 
 class ForceBead(dobject):
+
     """Base force helper class.
 
     This is the object that computes forces for a single bead. This is the last
@@ -242,6 +243,7 @@ class ForceBead(dobject):
 
 
 class ForceComponent(dobject):
+
     """Computes one component (e.g. bonded interactions) of the force.
 
     Deals with splitting the bead representation into
@@ -483,6 +485,7 @@ class ScaledForceComponent(dobject):
 
 
 class Forces(dobject):
+
     """Class that gathers all the forces together.
 
     Collects many forcefield instances and parallelizes getting the forces

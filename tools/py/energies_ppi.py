@@ -4,11 +4,11 @@ __author__ = 'Igor Poltavsky'
 
 """ energies_ppi.py
 The script reads the simulation time, potential energy, positions and forces from
-standard i-PI output files and computes the virial total energy, potential energy, virial kinetic energy estimators 
-and corresponding PPI corrections for each time frame. The output is saved to 'prefix.energies.dat' file which is 
-located in the folder which contains the input files. The results are printed out in the format: "time frame", 
-"improved total energy estimator", "virial total energy estimator", "total energy PPI correction", 
-"improved potential energy estimator", "potential energy estimator", "potential energy PPI correction", 
+standard i-PI output files and computes the virial total energy, potential energy, virial kinetic energy estimators
+and corresponding PPI corrections for each time frame. The output is saved to 'prefix.energies.dat' file which is
+located in the folder which contains the input files. The results are printed out in the format: "time frame",
+"improved total energy estimator", "virial total energy estimator", "total energy PPI correction",
+"improved potential energy estimator", "potential energy estimator", "potential energy PPI correction",
 "improved kinetic energy estimator", "virial kinetic energy estimator", "kinetic energy energy PPI correction".
 
 The script assumes that the input files are in 'xyz' format, with prefix.out (contains simulation time and

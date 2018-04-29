@@ -20,6 +20,7 @@ __all__ = ['InputOutputs', 'InputProperties', 'InputTrajectory',
 
 
 class InputProperties(InputArray):
+
     """Simple input class to describe output for properties.
 
     Storage class for PropertyOutput.
@@ -75,6 +76,7 @@ class InputProperties(InputArray):
 
 
 class InputTrajectory(InputValue):
+
     """Simple input class to describe output for trajectories.
 
     Storage class for TrajectoryOutput.
@@ -146,6 +148,7 @@ class InputTrajectory(InputValue):
 
 
 class InputCheckpoint(InputValue):
+
     """Simple input class to describe output for properties.
 
     Storage class for CheckpointOutput.
@@ -219,6 +222,7 @@ class InputCheckpoint(InputValue):
 
 
 class InputOutputs(Input):
+
     """ List of outputs input class.
 
     An example of a dynamic input class: a variable number of tags might be

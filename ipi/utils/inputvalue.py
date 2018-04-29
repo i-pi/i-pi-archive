@@ -30,6 +30,7 @@ __all__ = ['Input', 'InputDictionary', 'InputValue', 'InputRaw', 'InputAttribute
 
 
 class input_default(object):
+
     """Contains information required to dynamically create objects.
 
     Used so that we can define mutable default input values to various tags
@@ -72,6 +73,7 @@ class input_default(object):
 
 
 class Input(object):
+
     """Base class for input handling.
 
     Has the generic methods for dealing with the xml input file. Parses the input
@@ -655,6 +657,7 @@ class Input(object):
 
 
 class InputDictionary(Input):
+
     """Class that returns the value of all the fields as a dictionary.
     """
 
@@ -709,6 +712,7 @@ class InputDictionary(Input):
 
 
 class InputAttribute(Input):
+
     """Class for handling attribute data.
 
     Has the methods for dealing with attribute data of the form:
@@ -802,6 +806,7 @@ class InputAttribute(Input):
 
 
 class InputValue(InputAttribute):
+
     """Class for handling scalar input.
 
     Has the methods for dealing with simple data tags of the form:
@@ -918,6 +923,7 @@ ELPERLINE = 5
 
 
 class InputArray(InputValue):
+
     """Class for handling array input.
 
     Has the methods for dealing with simple data tags of the form:

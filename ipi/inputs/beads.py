@@ -19,6 +19,7 @@ __all__ = ['InputBeads']
 
 
 class InputBeads(Input):
+
     """Beads input class.
 
     Handles generating the appropriate beads class from the xml input file,

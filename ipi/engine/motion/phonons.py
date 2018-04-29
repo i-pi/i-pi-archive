@@ -31,6 +31,7 @@ from ipi.utils.messages import verbosity, warning, info
 
 
 class DynMatrixMover(Motion):
+
     """Dynamic matrix calculation routine by finite difference.
     """
 
@@ -38,7 +39,7 @@ class DynMatrixMover(Motion):
         """Initialises DynMatrixMover.
         Args:
         fixcom	: An optional boolean which decides whether the centre of mass
-                  motion will be constrained or not. Defaults to False. 
+                  motion will be constrained or not. Defaults to False.
         dynmatrix : A 3Nx3N array that stores the dynamic matrix.
         refdynmatrix : A 3Nx3N array that stores the refined dynamic matrix.
         """
@@ -209,6 +210,7 @@ class DynMatrixMover(Motion):
 
 
 class DummyPhononCalculator(dobject):
+
     """ No-op PhononCalculator """
 
     def __init__(self):
@@ -228,6 +230,7 @@ class DummyPhononCalculator(dobject):
 
 
 class FDPhononCalculator(DummyPhononCalculator):
+
     """ Finite dinnerence phonon evaluator.
     """
 
@@ -278,6 +281,7 @@ class FDPhononCalculator(DummyPhononCalculator):
 
 
 class NMFDPhononCalculator(FDPhononCalculator):
+
     """ Normal mode finite difference phonon evaluator.
     """
 
@@ -323,6 +327,7 @@ class NMFDPhononCalculator(FDPhononCalculator):
 
 
 class ENMFDPhononCalculator(NMFDPhononCalculator):
+
     """ Energy scaled normal mode finite difference phonon evaluator.
     """
 
