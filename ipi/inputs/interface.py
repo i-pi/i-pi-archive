@@ -24,6 +24,7 @@ __all__ = ['InputInterfaceSocket']
 
 
 class InputInterfaceSocket(Input):
+
     """Interface input class.
 
     Handles generating the apporopriate interface class from the xml

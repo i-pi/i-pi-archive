@@ -58,7 +58,7 @@ def xyz_traj_filedesc(natoms, nframe, comment):
 
 # if __name__ == '__main__':
 
-#     # Fast autocheck... if the test is wrong itself... it is bad ;)
+# Fast autocheck... if the test is wrong itself... it is bad ;)
 #     natoms = 100
 #     raw = xyz_traj_filedesc(natoms, 200, '')
 
@@ -74,12 +74,12 @@ def xyz_traj_filedesc(natoms, nframe, comment):
 #             frames += 1
 #             atoms = 0
 #         if len(fields) > 1:
-#             print 'Atom #', atoms, 'Frame #', frames+1
-#             print 'Check name of atoms #' + str(fields[0]) +\
-#                 '# == #' + str(raw[2][atoms]) + '#'
+# print 'Atom #', atoms, 'Frame #', frames+1
+# print 'Check name of atoms #' + str(fields[0]) +\
+# '# == #' + str(raw[2][atoms]) + '#'
 #             assert fields[0] == raw[2][atoms]
 #             for _i in xrange(3):
-#                 print 'Check coordinate of atoms #'+str(frames* natoms *3 + atoms*3+_i) + \
+# print 'Check coordinate of atoms #'+str(frames* natoms *3 + atoms*3+_i) + \
 #                     ' ==> ' + str(float(fields[_i+1]) -
 #                                   float(raw[1][frames * atoms*3+_i]))+\
 #                     ' < 1E-9 ('+str(fields[_i+1])  + '  ' +\

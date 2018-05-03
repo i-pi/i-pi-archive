@@ -3,7 +3,7 @@
 This module has machinery for abstract I/O handling.
 
 The idea is that the unit conversion is done here. The default is to guess
-units from the file, but it can be overridden. 
+units from the file, but it can be overridden.
 """
 
 # This file is part of i-PI.
@@ -111,11 +111,11 @@ def print_file_path(mode, beads, cell, filedesc=sys.stdout, title="", key="", di
 
 
 def print_file_raw(mode, atoms, cell, filedesc=sys.stdout, title="", cell_conv=1.0, atoms_conv=1.0):
-    """Prints atom positions, or atom-vector properties, into a `mode` formatted file, 
+    """Prints atom positions, or atom-vector properties, into a `mode` formatted file,
        providing atoms and cell in the internal i-PI representation but doing no conversion.
 
     Args:
-        atoms: An atoms object containing the positions (or properties) of the atoms 
+        atoms: An atoms object containing the positions (or properties) of the atoms
         cell: A cell object containing the system box.
         filedesc: An open writable file object. Defaults to standard output.
         title: This contains the string that will be used for the comment line.
@@ -127,13 +127,13 @@ def print_file_raw(mode, atoms, cell, filedesc=sys.stdout, title="", cell_conv=1
 
 
 def print_file(mode, atoms, cell, filedesc=sys.stdout, title="", key="", dimension="length", units="automatic", cell_units="automatic"):
-    """Prints atom positions, or atom-vector properties, into a `mode` formatted file, 
-       using i-PI internal representation of atoms & cell. Does conversion and prepares 
-       formatted title line. 
+    """Prints atom positions, or atom-vector properties, into a `mode` formatted file,
+       using i-PI internal representation of atoms & cell. Does conversion and prepares
+       formatted title line.
 
     Args:
         mode: I/O file format (e.g. "xyz")
-        atoms: An atoms object containing the positions (or properties) of the atoms 
+        atoms: An atoms object containing the positions (or properties) of the atoms
         cell: A cell object containing the system box.
         filedesc: An open writable file object. Defaults to standard output.
         title: This gives a string to be appended to the comment line.
@@ -160,9 +160,9 @@ def print_file(mode, atoms, cell, filedesc=sys.stdout, title="", key="", dimensi
 
 
 def read_file_raw(mode, filedesc):
-    """ Reads atom positions, or atom-vector properties, from a file of mode "mode", 
+    """ Reads atom positions, or atom-vector properties, from a file of mode "mode",
         returns positions and cell parameters in raw array format, without creating i-PI
-        internal objects. 
+        internal objects.
 
     Args:
         mode: I/O file format (e.g. "xyz")
@@ -184,11 +184,11 @@ def read_file_raw(mode, filedesc):
 
 
 def read_file(mode, filedesc, dimension="automatic", units="automatic", cell_units="automatic"):
-    """ Reads one frame from an open `mode`-style file. Also performs units 
+    """ Reads one frame from an open `mode`-style file. Also performs units
         conversion as requested, or as guessed from the input comment line.
 
     Args:
-        mode: I/O file format (e.g. "xyz")        
+        mode: I/O file format (e.g. "xyz")
         filedesc: An open readable file object from a `mode` formatted file.
         dimension: Dimensions of the property (e.g. "length")
         units: Units for the input (e.g. "angstrom")

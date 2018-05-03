@@ -1,6 +1,6 @@
 #!/usr/bin/env python2
 
-""" 
+"""
 Computes the autocorrelation function from i-pi outputs. Assumes the input files are in xyz format and atomic units.
 """
 

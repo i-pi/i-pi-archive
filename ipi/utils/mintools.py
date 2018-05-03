@@ -47,6 +47,10 @@ Functions:
             Nocedal, J. (1980). Updating Quasi-Newton Matrices with
             Limited Storage. Mathematics of Computation, 35, 773-782.
             DOI: http://dx.doi.org/10.1090/S0025-5718-1980-0572855-7
+        powell: powell formula to update the hessian (R. Fletcher. Practical Methods of Optimization. 2nd ed.
+            (Chichester: John Wileyand Sons, 1987)
+        nichols: nichols algorithm for optimization (minimum or transition state)
+        Simons, J. and Nichols, J. (1990), Int. J. Quantum Chem., 38: 263-276. doi: 10.1002/qua.560382427
 """
 
 # TODO: CLEAN UP BFGS, L-BFGS, L-BFGS_nls TO NOT EXIT WITHIN MINTOOLS.PY BUT USE UNIVERSAL SOFTEXIT
@@ -206,6 +210,7 @@ def min_brent(fdf, fdf0, x0, tol, itmax, init_step):
     """
 
     # Initializations and constants
+    gold = 0.3819660  # Golden ratio
     zeps = 1.0e-10  # Safeguard against trying to find fractional precision for min that is exactly zero
     e = 0.0  # Size of step before last
 
@@ -401,6 +406,7 @@ def min_approx(fdf, x0, fdf0, d0, big_step, tol, itmax):
         d0 = np.multiply(d0, big_step / stepsum)
 
     slope = np.dot(df0.flatten(), d0.flatten())
+
     if slope >= 0.0:
         info(" @MINIMIZE: Warning -- gradient is >= 0 (%f)" % slope, verbosity.low)
 
@@ -1188,3 +1194,97 @@ def L_BFGS_nls(x0, d0, fdf, qlist, glist, fdf0=None, big_step=100, tol=1.0e-6, i
     info(" @MINIMIZE: Updated search direction", verbosity.debug)
 
     return (x, fx, xi, qlist, glist)
+
+
+def nichols(f0, f1, d, dynmax, m3, big_step, mode=1):
+    """ Find new movement direction. JCP 92,340 (1990)
+    IN    f0      = physical forces        (n,)
+          f1      = spring forces
+          d       = dynmax eigenvalues
+          dynmax  = dynmax       (n-m x n-m) with m = # external modes
+          m3      = mass vector
+    OUT   DX      = displacement in cartesian basis
+
+    INTERNAL
+          ndim = dimension
+          f    = forces
+          d    = hessian eigenvalues
+          w    = hessian eigenvector (in columns)
+          g    = gradient in cartesian basis  #Note in trm g is the force vector
+          gE   = gradient in eigenvector basis
+          DX   = displacement in cartesian basis
+          DXE  = displacement in eigenvector basis
+    """
+
+    # Resize
+    ndim = f0.size
+    shape = f0.shape
+    f = (f0 + f1).reshape((1, ndim)) / m3.reshape((1, ndim))**0.5  # From cartesian base to mass-weighted base
+
+    # Change of basis to eigenvector space
+    d = d[:, np.newaxis]  # dimension nx1
+    gEt = -np.dot(f, dynmax)  # Change of basis  #
+    gE = gEt.T  # dimension (n-m)x1
+        # The step has the general form:
+    # d_x[j] =  alpha *( gE[j] )  / ( lambda-d[j] )
+
+    if mode == 0:
+        # Minimization
+        alpha = 1.0
+        lamb = 0.0
+
+        d_x = alpha * (gE) / (lamb - d)
+
+        if d[0] < 0 or np.dot(d_x.flatten(), d_x.flatten()) > big_step ** 2:
+            lamb = d[0] - np.absolute(gE[0] / big_step)
+            d_x = alpha * (gE) / (lamb - d)
+
+    elif mode == 1:
+
+        if d[0] > 0:
+            if d[1] / 2 > d[0]:
+                alpha = 1
+                lamb = (2 * d[0] + d[1]) / 4
+            else:
+                alpha = (d[1] - d[0]) / d[1]
+                lamb = (3 * d[0] + d[1]) / 4  # midpoint between b[0] and b[1]*(1-alpha/2)
+
+        elif d[1] < 0:  # Jeremy Richardson
+            if (d[1] >= d[0] / 2):
+                alpha = 1
+                lamb = (d[0] + 2 * d[1]) / 4
+            else:
+                alpha = (d[0] - d[1]) / d[1]
+                lamb = (d[0] + 3 * d[1]) / 4
+
+        #elif d[1] < 0:  #Litman for Second Order Saddle point
+        #    alpha = 1
+        #    lamb = (d[1] + d[2]) / 4
+        #    print 'WARNING: We are not using the standar Nichols'
+        #    print 'd_x', d_x[0],d_x[1]
+        else:  # Only d[0] <0
+            alpha = 1
+            lamb = (d[0] + d[1]) / 4
+
+        d_x = alpha * (gE) / (lamb - d)
+    # Some check or any type of reject? ALBERTO
+
+    DX = np.dot(dynmax, d_x)  # From ev base to mass-weighted base
+    DX = DX.reshape(shape)
+    DX = np.multiply(DX, m3**(-0.5))  # From mass-weighted base to cartesion base
+
+    return DX
+
+
+def Powell(d, Dg, H):
+    """Update Cartesian Hessian using gradient.
+    Input: d  = Change in position
+           Dg = change in gradient
+            H = Cartesian Hessian
+
+    Output: H = Cartesian Hessian"""
+
+    ddi = 1 / np.dot(d, d)
+    y = Dg - np.dot(H, d)
+    H += ddi * (np.outer(y, d) + np.outer(d, y) - np.dot(y, d) * np.outer(d, d) * ddi)
+    return H

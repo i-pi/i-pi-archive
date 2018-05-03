@@ -19,9 +19,9 @@ from ipi.engine.atoms import Atoms
 from ipi.engine.cell import Cell
 from ipi.utils.units import Elements
 
-#######################
+#
 # Testing reading xyz #
-#######################
+#
 
 deg2rad = np.pi / 180.0
 cell_string = ' '.join([str(x) for x in mt.abc2h(5.1, 5.2, 5.0,
@@ -111,9 +111,9 @@ def test_iter_xyz(create_random_xyz_traj_to_read):
         _fr += 1
 
 
-#######################
+#
 # Testing writing xyz #
-#######################
+#
 
 write_test_xyz = [
     (1, 1, 'just a string plus few numbers: 1.10 2 .1',
@@ -197,7 +197,7 @@ def test_print_xyz(create_random_xyz_traj_to_write):
 #         string, float_n = st
 #         floats = 100.0 * np.random.random_sample(float_n)
 
-#         # Generate also a random number of spaces between numbers
+# Generate also a random number of spaces between numbers
 #         spaces = ' ' * np.random.random_integers(1, 12)
 #         string += spaces
 #         string += spaces.join([str(x) for x in floats.tolist()])

@@ -16,6 +16,7 @@ __all__ = ['Constants', 'Elements', 'unit_to_internal', 'unit_to_user']
 
 
 class Constants(object):
+
     """Class whose members are fundamental constants.
 
     Attributes:
@@ -30,6 +31,7 @@ class Constants(object):
 
 
 class Elements(dict):
+
     """Class which contains the mass of different elements.
 
     Attributes:
@@ -297,11 +299,11 @@ UnitPrefixRE = " *(" + UnitPrefixRE[1:] + ")(.*) *"
 UnitPrefixRE = re.compile(UnitPrefixRE)
 
 
-########################################################################
-#  Atomic units are used EVERYWHERE internally. In order to quickly    #
-#  interface with any "outside" unit, we set up a simple conversion    #
-#  library.                                                            #
-########################################################################
+#
+# Atomic units are used EVERYWHERE internally. In order to quickly    #
+# interface with any "outside" unit, we set up a simple conversion    #
+# library.                                                            #
+#
 
 def unit_to_internal(family, unit, number):
     """Converts a number of given dimensions and units into internal units.

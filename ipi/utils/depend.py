@@ -37,6 +37,7 @@ __all__ = ['depend_value', 'depend_array', 'synchronizer', 'dobject', 'dd',
 
 
 class synchronizer(object):
+
     """Class to implement synched objects.
 
     Holds the objects used to keep two or more objects in step with each other.
@@ -67,6 +68,7 @@ class synchronizer(object):
 
 # TODO put some error checks in the init to make sure that the object is initialized from consistent synchro and func states
 class depend_base(object):
+
     """Base class for dependency handling.
 
     Builds the majority of the machinery required for the different depend
@@ -288,6 +290,7 @@ class depend_base(object):
 
 
 class depend_value(depend_base):
+
     """Depend class for scalar values.
 
     Attributes:
@@ -355,6 +358,7 @@ class depend_value(depend_base):
 
 
 class depend_array(np.ndarray, depend_base):
+
     """Depend class for arrays.
 
     Differs from depend_value as arrays handle getting items in a different
@@ -677,7 +681,7 @@ def dstrip(da):
         # been cleared already but I am not 100% sure so better check - and in
         # case raise the update
         result = da.view(np.ndarray)
-        #result.flags.writeable = False
+        # result.flags.writeable = False
         return result
     else:
         return da
@@ -723,6 +727,7 @@ def depraise(exception):
 
 
 class dobject(object):
+
     """Class that allows standard notation to be used for depend objects.
 
     An extension of the standard library object that overloads __getattribute__
@@ -776,6 +781,7 @@ def dd(dobj):
 
 
 class ddirect(object):
+
     """Gives a "view" of a depend object where one can directly access its
     depend_base members."""
 

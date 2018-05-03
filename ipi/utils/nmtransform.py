@@ -14,7 +14,7 @@ __all__ = ['nm_trans', 'nm_rescale', 'nm_fft', 'mk_nm_matrix', 'mk_o_nm_matrix',
 
 
 def mk_nm_matrix(nbeads):
-    """ 
+    """
     Makes a matrix that transforms between the bead and normal mode
     representations.
 
@@ -47,9 +47,9 @@ def o_nm_eva(nbeads):
 
 
 def mk_o_nm_matrix(nbeads):
-    """ 
+    """
     Makes a matrix that transforms between the bead and the (open path) normal mode
-    representations. 
+    representations.
     """
     # here define the orthogonal transformation matrix for the open path
     b2o_nm = np.zeros((nbeads, nbeads))
@@ -131,6 +131,7 @@ def mk_o_rs_matrix(nb1, nb2):
 
 
 class nm_trans(object):
+
     """Uses matrix multiplication to do normal mode transformations.
 
     Attributes:
@@ -186,6 +187,7 @@ class nm_trans(object):
 
 
 class nm_rescale(object):  # !! TODO - make compatible with a open path formulation
+
     """Uses matrix multiplication to do ring polymer contraction or expansion
     between different numbers of beads.
 
@@ -244,6 +246,7 @@ class nm_rescale(object):  # !! TODO - make compatible with a open path formulat
 
 
 class nm_fft(object):  # ! TODO add (matrix-version) of the open path transformation here
+
     """Uses Fast Fourier transforms to do normal mode transformations.
 
     Attributes:

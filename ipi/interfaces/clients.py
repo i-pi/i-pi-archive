@@ -21,6 +21,7 @@ from ..utils import units
 
 
 class Client(DriverSocket):
+
     """Base class for the implementation of a client in Python.
 
     Handles sending and receiving data from the client code.
@@ -175,6 +176,7 @@ class Client(DriverSocket):
 
 
 class ClientASE(Client):
+
     """Socket client that calls an ASE calculator to get interactions.
 
     Atomic Simulation Environment:
