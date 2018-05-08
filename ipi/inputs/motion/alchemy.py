@@ -12,6 +12,7 @@ __all__ = ['InputAlchemy']
 
 
 class InputAlchemy(InputDictionary):
+
     """Alchemy input class.
 
     Handles generating the appropriate alchemical exchange class from the xml input file.

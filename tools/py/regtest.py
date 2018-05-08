@@ -145,6 +145,7 @@ def main():
 
 
 class TestCase:
+
     """
     Stores test case, paths to original files which define a regtest.
 
@@ -204,6 +205,7 @@ class TestCase:
 
 
 class Counter:
+
     """
     Counter class for attributing socket numbers.
     """
@@ -216,6 +218,7 @@ class Counter:
 
 
 class TestInstance:
+
     """
     Stores test instance which is build from a test case.
 
@@ -440,6 +443,7 @@ class TestInstance:
 
 
 class TestOutput:
+
     """
     Stores paths to test outputs.
     Attributes:
@@ -508,6 +512,7 @@ class TestOutput:
 
 
 class ComparisonResult:
+
     """
     Stores result of comparing two output files.
     Attributes:
@@ -552,6 +557,7 @@ class ComparisonResult:
 
 
 class TestCandidate:
+
     """
     Contains valid candidates for TestCase.
     Arguments:
@@ -574,6 +580,7 @@ class TestCandidate:
 
 
 class Parameters:
+
     """
     Set of global parameters
     """
@@ -605,22 +612,27 @@ class Parameters:
 
 
 class RegtestTimeout(Exception):
+
     """Raise when subprocess of regttest timeout"""
 
 
 class WrongIPICommand(Exception):
+
     """Raise when i-pi command is not found"""
 
 
 class WrongDriverCommand(Exception):
+
     """Raise when driver command is not found"""
 
 
 class OutputCorrupted(Exception):
+
     """Raise when test output (either reference or test) has missing files"""
 
 
 class IPIError(Exception):
+
     """Raise when I-PI terminates with error"""
 
 
@@ -837,7 +849,9 @@ def get_output_filenames(xml_path):
             pass
         elif isinstance(o, PropertyOutput):
             for _ss in simul.syslist:   # create multiple copies
-                filename = _ss.prefix + o.filename
+                filename = o.filename
+                if _ss.prefix != "":
+                    filename = _ss.prefix + "_" + filename                
                 lprop.append(filename)
 
         # trajectories are more complex, as some have per-bead output
@@ -853,17 +867,21 @@ def get_output_filenames(xml_path):
                              'd') % (_bi))
 
                     for _ss in simul.syslist:
-                        if o.ibead < 0 or o.ibead == _bi:
+                        if ( o.ibead < 0 and ((_bi%(-o.ibead) == 0))) or o.ibead == _bi :
+                            filename = o.filename
+                            if _ss.prefix != "":
+                                filename = _ss.prefix + "_" + filename
                             if getkey(o.what) == 'extras':
-                                filename = _ss.prefix + o.filename + "_" + padb
+                                filename += "_" + padb
                             else:
-                                filename = _ss.prefix + o.filename + "_" + padb + \
-                                    "." + o.format
+                                filename += "_" + padb + "." + o.format
                             ltraj.append(filename)
             else:
                 for _ss in simul.syslist:   # create multiple copies
-                    filename = _ss.prefix + o.filename
-                    filename = filename + "." + o.format
+                    filename = o.filename
+                    if _ss.prefix != "":
+                        filename = _ss.prefix + "_" + filename
+                    filename += "." + o.format
                     ltraj.append(filename)
     os.dup2(oldstdout_fno, 1)
     return (ltraj + lprop)

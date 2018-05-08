@@ -29,6 +29,7 @@ __all__ = ['PropertyOutput', 'TrajectoryOutput', 'CheckpointOutput']
 
 
 class PropertyOutput(dobject):
+
     """Class dealing with outputting a set of properties to file.
 
     Does not do any calculation, just manages opening a file, getting data
@@ -170,6 +171,7 @@ class PropertyOutput(dobject):
 
 
 class TrajectoryOutput(dobject):
+
     """Class dealing with outputting atom-based properties as a
     trajectory file.
 
@@ -265,7 +267,7 @@ class TrajectoryOutput(dobject):
             # open all files
             self.out = []
             for b in range(self.system.beads.nbeads):
-                if (self.ibead < 0) or (self.ibead == b):
+                if (self.ibead < 0 and (b%(-self.ibead) == 0) ) or (self.ibead == b):
                     self.out.append(open_backup(fmt_fn.format(b), mode))
                 else:
                     # Create null outputs if a single bead output is chosen.
@@ -314,7 +316,8 @@ class TrajectoryOutput(dobject):
         if hasattr(self.out, "__getitem__"):
             if self.ibead < 0:
                 for b in range(len(self.out)):
-                    self.write_traj(data, self.what, self.out[b], b, format=self.format, dimension=dimension, units=units, cell_units=self.cell_units, flush=doflush)
+                    if self.out[b] is not None:
+                        self.write_traj(data, self.what, self.out[b], b, format=self.format, dimension=dimension, units=units, cell_units=self.cell_units, flush=doflush)
             elif self.ibead < len(self.out):
                 self.write_traj(data, self.what, self.out[self.ibead], self.ibead, format=self.format, dimension=dimension, units=units, cell_units=self.cell_units, flush=doflush)
             else:
@@ -366,6 +369,7 @@ class TrajectoryOutput(dobject):
 
 
 class CheckpointOutput(dobject):
+
     """Class dealing with outputting checkpoints.
 
     Saves the complete status of the simulation at regular intervals.

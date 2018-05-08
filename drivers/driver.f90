@@ -444,8 +444,8 @@
                vpars(1) = cell_h(1,1)
                vpars(2) = cell_h(2,2)
                vpars(3) = cell_h(3,3)
-               IF (cell_h(1,2).gt.1d-10 .or. cell_h(1,3).gt.1d-12  .or. cell_h(2,3).gt.1d-12) THEN
-                  WRITE(*,*) " qtip4pf PES only works with orthorhombic cells"
+               IF (cell_h(1,2).gt.1d-10 .or. cell_h(1,3).gt.1d-12  .or. cell_h(2,3).gt.1d-12) THEN                       
+                  WRITE(*,*) " qtip4pf PES only works with orthorhombic cells", cell_h(1,2), cell_h(1,3), cell_h(2,3)
                   STOP "ENDED"
                ENDIF
                CALL qtip4pf(vpars(1:3),atoms,nat,forces,pot,virial)

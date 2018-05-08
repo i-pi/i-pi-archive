@@ -18,17 +18,18 @@ __all__ = ['InputNormalModes']
 
 
 class InputNMFrequencies(InputArray):
+
     """ Storage class for NormalModes engine. """
 
     attribs = copy(InputArray.attribs)
     attribs["style"] = (InputAttribute, {"dtype": str,
                                          "default": "rpmd",
-                                         "help": """Specifies the technique to be used to calculate the dynamical masses. 
-                                                'rpmd' simply assigns the bead masses the physical mass. 
+                                         "help": """Specifies the technique to be used to calculate the dynamical masses.
+                                                'rpmd' simply assigns the bead masses the physical mass.
                                                 'manual' sets all the normal mode frequencies except the centroid normal mode manually.
-                                                'pa-cmd' takes an argument giving the frequency to set all the non-centroid normal modes to. 
-                                                'wmax-cmd' is similar to 'pa-cmd', except instead of taking one argument it takes two 
-                                                      ([wmax,wtarget]). The lowest-lying normal mode will be set to wtarget for a 
+                                                'pa-cmd' takes an argument giving the frequency to set all the non-centroid normal modes to.
+                                                'wmax-cmd' is similar to 'pa-cmd', except instead of taking one argument it takes two
+                                                      ([wmax,wtarget]). The lowest-lying normal mode will be set to wtarget for a
                                                       free particle, and all the normal modes will coincide at frequency wmax. """,
                                          "options": ['pa-cmd', 'wmax-cmd', 'manual', 'rpmd']})
 
@@ -66,6 +67,7 @@ class InputNMFrequencies(InputArray):
 
 
 class InputNormalModes(Input):
+
     """ Storage class for NormalModes engine.
 
     Describes how normal-modes transformation and integration should be

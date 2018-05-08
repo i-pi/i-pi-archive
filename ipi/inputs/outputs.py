@@ -20,6 +20,7 @@ __all__ = ['InputOutputs', 'InputProperties', 'InputTrajectory',
 
 
 class InputProperties(InputArray):
+
     """Simple input class to describe output for properties.
 
     Storage class for PropertyOutput.
@@ -75,6 +76,7 @@ class InputProperties(InputArray):
 
 
 class InputTrajectory(InputValue):
+
     """Simple input class to describe output for trajectories.
 
     Storage class for TrajectoryOutput.
@@ -107,7 +109,7 @@ class InputTrajectory(InputValue):
     attribs["cell_units"] = (InputAttribute, {"dtype": str, "default": "",
                                               "help": "The units for the cell dimensions."})
     attribs["bead"] = (InputAttribute, {"dtype": int, "default": -1,
-                                        "help": "Print out only the specified bead. A negative value means print all."})
+                                        "help": "Print out only the specified bead. A negative value means print only one every -(bead) beads, e.g. -2 means print just the even beads, -4 one every four and so on."})
     attribs["flush"] = (InputAttribute, {"dtype": int, "default": 1,
                                          "help": "How often should streams be flushed. 1 means each time, zero means never."})
 
@@ -146,6 +148,7 @@ class InputTrajectory(InputValue):
 
 
 class InputCheckpoint(InputValue):
+
     """Simple input class to describe output for properties.
 
     Storage class for CheckpointOutput.
@@ -219,6 +222,7 @@ class InputCheckpoint(InputValue):
 
 
 class InputOutputs(Input):
+
     """ List of outputs input class.
 
     An example of a dynamic input class: a variable number of tags might be

@@ -24,6 +24,7 @@ __all__ = ["NormalModes"]
 
 
 class NormalModes(dobject):
+
     """Handles the path normal modes.
 
     Normal-modes transformation, determination of path frequencies,
@@ -196,8 +197,8 @@ class NormalModes(dobject):
                                     value=np.zeros(self.beads.nbeads, float),
                                     func=self.get_omegak, dependencies=[dself.omegan])
         dself.omegak2 = depend_array(name='omegak2',
-                                    value=np.zeros(self.beads.nbeads, float),
-                                    func=(lambda: self.omegak**2), dependencies=[dself.omegak])
+                                     value=np.zeros(self.beads.nbeads, float),
+                                     func=(lambda: self.omegak**2), dependencies=[dself.omegak])
 
         # Add o_omegak to calculate the freq in the case of open path
         dself.o_omegak = depend_array(name='o_omegak',
@@ -242,7 +243,7 @@ class NormalModes(dobject):
         # spring energy, calculated in normal modes
         dself.vspring = depend_value(name="vspring",
                                      value=0.0, func=self.get_vspring,
-                                     dependencies=[dself.qnm, dself.omegak, dd(self.beads).m3])
+                                     dependencies=[dself.qnm, dself.omegak, dself.o_omegak, dd(self.beads).m3])
 
         # spring forces on normal modes
         dself.fspringnm = depend_array(name="fspringnm",
@@ -264,7 +265,13 @@ class NormalModes(dobject):
     def get_vspring(self):
         """Returns the spring energy calculated in NM representation."""
 
-        return 0.5 * (self.beads.m3 * self.omegak[:, np.newaxis]**2 * self.qnm**2).sum()
+        vspring = (self.beads.m3 * self.omegak[:, np.newaxis]**2 * self.qnm**2).sum()
+
+        for j in self.open_paths:
+            vspring += (self.beads.m[j] * (self.o_omegak**2 - self.omegak**2) *
+                        (self.qnm[:, 3 * j]**2 + self.qnm[:, 3 * j + 1]**2 + self.qnm[:, 3 * j + 2]**2)).sum()
+
+        return vspring * 0.5
 
     def get_omegan(self):
         """Returns the effective vibrational frequency for the interaction
@@ -455,6 +462,11 @@ class NormalModes(dobject):
         for b in range(self.nbeads):
             dm3[b] = self.beads.m3[b] * self.nm_factor[b]
 
+        # dynamical masses for the open paths
+        for j in self.open_paths:
+            for a in xrange(3 * j, 3 * (j + 1)):
+                for k in xrange(1, self.nbeads):
+                    dm3[k, a] = self.beads.m3[k, a] * self.o_nm_factor[k]
         return dm3
 
     def free_qstep(self):
@@ -487,6 +499,8 @@ class NormalModes(dobject):
                 qnm[k] = pq[1, :]
                 pnm[k] = pq[0, :]
 
+            # now for open paths we recover the initial conditions (that have not yet been overwritten)
+            # and do open path propagation
             pq = np.zeros(2)
             for j in self.open_paths:
                 for a in xrange(3 * j, 3 * (j + 1)):

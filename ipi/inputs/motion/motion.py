@@ -24,12 +24,12 @@ Classes:
 import numpy as np
 from copy import copy
 import ipi.engine.initializer
-from ipi.engine.motion import Motion, Dynamics, Replay, GeopMotion, NEBMover, DynMatrixMover, MultiMotion, AlchemyMC
-from ipi.engine.motion import DynMatrixMover
+from ipi.engine.motion import Motion, Dynamics, Replay, GeopMotion, NEBMover, DynMatrixMover, MultiMotion, AlchemyMC, InstantonMotion
 from ipi.utils.inputvalue import *
 from ipi.inputs.thermostats import *
 from ipi.inputs.initializer import *
 from .geop import InputGeop
+from .instanton import InputInst
 from .neb import InputNEB
 from .dynamics import InputDynamics
 from .phonons import InputDynMatrix
@@ -40,6 +40,7 @@ __all__ = ['InputMotion']
 
 
 class InputMotionBase(Input):
+
     """Motion calculation input class.
 
     A class to encompass the different "motion" calculations.
@@ -56,7 +57,7 @@ class InputMotionBase(Input):
 
     attribs = {"mode": (InputAttribute, {"dtype": str,
                                          "help": "How atoms should be moved at each step in the simulatio. 'replay' means that a simulation is restarted from a previous simulation.",
-                                         "options": ['vibrations', 'minimize', 'replay', 'neb', 'dynamics', 'alchemy', 'dummy']})}
+                                         "options": ['vibrations', 'minimize', 'replay', 'neb', 'dynamics', 'alchemy', 'instanton', 'dummy']})}
 
     fields = {"fixcom": (InputValue, {"dtype": bool,
                                       "default": True,
@@ -75,9 +76,10 @@ class InputMotionBase(Input):
               "vibrations": (InputDynMatrix, {"default": {},
                                               "help": "Option for phonon computation"}),
               "alchemy": (InputAlchemy, {"default": {},
-                                         "help": "Option for alchemical exchanges"})
+                                         "help": "Option for alchemical exchanges"}),
+              "instanton": (InputInst, {"default": {},
+                                        "help": "Option for Instanton optimization"})
               }
-
     dynamic = {}
 
     default_help = "Allow chosing the type of calculation to be performed. Holds all the information that is calculation specific, such as geometry optimization parameters, etc."
@@ -117,6 +119,10 @@ class InputMotionBase(Input):
             self.mode.store("alchemy")
             self.alchemy.store(sc)
             tsc = 1
+        elif type(sc) is InstantonMotion:
+            self.mode.store("instanton")
+            self.instanton.store(sc)
+            tsc = 1
         else:
             raise ValueError("Cannot store Mover calculator of type " + str(type(sc)))
 
@@ -148,14 +154,17 @@ class InputMotionBase(Input):
             sc = DynMatrixMover(fixcom=self.fixcom.fetch(), fixatoms=self.fixatoms.fetch(), **self.vibrations.fetch())
         elif self.mode.fetch() == "alchemy":
             sc = AlchemyMC(fixcom=self.fixcom.fetch(), fixatoms=self.fixatoms.fetch(), **self.alchemy.fetch())
+        elif self.mode.fetch() == "instanton":
+            sc = InstantonMotion(fixcom=self.fixcom.fetch(), fixatoms=self.fixatoms.fetch(), **self.instanton.fetch())
         else:
             sc = Motion()
-            #raise ValueError("'" + self.mode.fetch() + "' is not a supported motion calculation mode.")
+            # raise ValueError("'" + self.mode.fetch() + "' is not a supported motion calculation mode.")
 
         return sc
 
 
 class InputMotion(InputMotionBase):
+
     """ Extends InputThermoBase to allow the definition of a multithermo """
 
     attribs = copy(InputMotionBase.attribs)

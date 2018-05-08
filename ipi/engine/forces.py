@@ -33,6 +33,7 @@ fbuid = 0
 
 
 class ForceBead(dobject):
+
     """Base force helper class.
 
     This is the object that computes forces for a single bead. This is the last
@@ -242,6 +243,7 @@ class ForceBead(dobject):
 
 
 class ForceComponent(dobject):
+
     """Computes one component (e.g. bonded interactions) of the force.
 
     Deals with splitting the bead representation into
@@ -483,6 +485,7 @@ class ScaledForceComponent(dobject):
 
 
 class Forces(dobject):
+
     """Class that gathers all the forces together.
 
     Collects many forcefield instances and parallelizes getting the forces
@@ -749,7 +752,7 @@ class Forces(dobject):
     def pots_component(self, index, weighted=True):
         """Fetches the index^th component of the total potential."""
         if weighted:
-            if self.mforces[index].weight > 0:
+            if self.mforces[index].weight != 0:
                 return self.mforces[index].weight * self.mrpc[index].b2tob1(self.mforces[index].pots)
             else:
                 return 0
@@ -759,7 +762,7 @@ class Forces(dobject):
     def forces_component(self, index, weighted=True):
         """ Fetches the index^th component of the total force."""
         if weighted:
-            if self.mforces[index].weight > 0:
+            if self.mforces[index].weight != 0:
                 return self.mforces[index].weight * self.mrpc[index].b2tob1(dstrip(self.mforces[index].f))
             else:
                 return np.zeros((self.nbeads, self.natoms * 3), float)
@@ -911,7 +914,7 @@ class Forces(dobject):
         for k in range(self.nforces):
             # "expand" to the total number of beads the forces from the
             # contracted one
-            if self.mforces[k].weight > 0:
+            if self.mforces[k].weight != 0:
                 rf += self.mforces[k].weight * self.mforces[k].mts_weights.sum() * self.mrpc[k].b2tob1(dstrip(self.mforces[k].f))
         return rf
 
@@ -920,7 +923,7 @@ class Forces(dobject):
 
         rf = np.zeros((self.nbeads, 3 * self.natoms), float)
         for k in range(self.nforces):
-            if self.mforces[k].weight > 0 and self.mforces[k].mts_weights.sum() != 0:
+            if self.mforces[k].weight != 0 and self.mforces[k].mts_weights.sum() != 0:
                 rf += self.mforces[k].weight * self.mforces[k].mts_weights.sum() * self.forces_4th_order(k)
         return rf
 
@@ -932,7 +935,7 @@ class Forces(dobject):
         for k in range(self.nforces):
             # "expand" to the total number of beads the potentials from the
             # contracted one
-            if self.mforces[k].weight > 0:
+            if self.mforces[k].weight != 0:
                 rp += self.mforces[k].weight * self.mforces[k].mts_weights.sum() * self.mrpc[k].b2tob1(self.mforces[k].pots)
         return rp
 

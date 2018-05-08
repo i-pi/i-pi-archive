@@ -5,8 +5,8 @@ __version__ = '1.0'
 
 """ rdf_ppi.py
 The script reads simulation time, potential energy, positions and forces from
-standard i-PI output files and computes a conventional and PPI radial distribution function (RDF) estimators. 
-The output is saved to two files which are created in the folder which contains the input files. 
+standard i-PI output files and computes a conventional and PPI radial distribution function (RDF) estimators.
+The output is saved to two files which are created in the folder which contains the input files.
 The results are printed out in the format: "distance", "RDF".
 
 The script assumes that the input files are in 'xyz' format, with prefix.pos_*.xyz (positions) and
@@ -77,7 +77,7 @@ def RDF(prefix, temp, A, B, nbins, r_min, r_max, ss=0, unit='angstrom'):
     # open input and output files
     ipos = [open(fn, "r") for fn in fns_pos]
     ifor = [open(fn, "r") for fn in fns_for]
-    #iRDF, iRDFq = open(fn_out_rdf, "w"), open(fn_out_rdf_q, "w")
+    # iRDF, iRDFq = open(fn_out_rdf, "w"), open(fn_out_rdf_q, "w")
 
     # Species for RDF
     species = (A, B)

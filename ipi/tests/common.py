@@ -25,6 +25,7 @@ def local(file=None):
 
 
 class TestSimulation(object):
+
     """Simple class used to test various aspects of the simulation.
 
     Can be used to run an example given the location of an xml

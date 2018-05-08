@@ -6,6 +6,7 @@ import time
 
 
 class A(dobject):
+
     def __init__(self):
 
         dself = dd(self)
@@ -24,6 +25,7 @@ class A(dobject):
 
 
 class B(dobject):
+
     def __init__(self):
 
         dself = dd(self)

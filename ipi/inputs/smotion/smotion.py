@@ -73,6 +73,7 @@ class InputSmotion(Input):
             self.remd.store(sc)
         elif type(sc) is MetaDyn:
             self.mode.store("metad")
+            self.metad.store(sc)
         else:
             raise ValueError("Cannot store Smotion calculator of type " + str(type(sc)))
 

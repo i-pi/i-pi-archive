@@ -34,6 +34,7 @@ __all__ = ['System']
 
 
 class System(dobject):
+
     """Physical system object.
 
     Contains all the physical information. Also handles stepping and output.

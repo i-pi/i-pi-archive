@@ -50,6 +50,7 @@ def ensemble_swap(ens1, ens2):
 
 
 class Ensemble(dobject):
+
     """Base ensemble class.
 
     Defines the thermodynamic state of the system.
@@ -133,7 +134,7 @@ class Ensemble(dobject):
         dself.econs.add_dependency(dd(self.nm).kin)
         dself.econs.add_dependency(dd(self.forces).pot)
         dself.econs.add_dependency(dd(self.bias).pot)
-        dself.econs.add_dependency(dd(self.beads).vpath)
+        dself.econs.add_dependency(dd(self.nm).vspring)
         dself.econs.add_dependency(dself.eens)
 
         # pipes the weights to the list of weight vectors
@@ -194,7 +195,8 @@ class Ensemble(dobject):
         """Calculates the conserved energy quantity for constant energy
         ensembles.
         """
-        eham = self.beads.vpath * self.nm.omegan2 + self.nm.kin + self.forces.pot
+
+        eham = self.nm.vspring + self.nm.kin + self.forces.pot
         eham += self.bias.pot   # bias
         for e in self._elist:
             eham += e.get()

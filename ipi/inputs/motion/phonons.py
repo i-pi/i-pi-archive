@@ -34,9 +34,10 @@ __all__ = ["InputDynMatrix"]
 
 
 class InputDynMatrix(InputDictionary):
+
     """Dynamic matrix calculation options.
 
-       Contains options related with finite difference computation of force constats. 
+       Contains options related with finite difference computation of force constats.
 
     """
 

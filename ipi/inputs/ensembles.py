@@ -17,6 +17,7 @@ __all__ = ['InputEnsemble']
 
 
 class InputEnsemble(Input):
+
     """Ensemble input class.
 
     Handles generating the appropriate ensemble class from the xml input file,
