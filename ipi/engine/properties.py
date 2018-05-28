@@ -1390,6 +1390,7 @@ class Properties(dobject):
       pc = depstrip(self.beads.pc)
       m = depstrip(self.beads.m)
       fall = depstrip(self.forces.f + self.forces.fsc)
+      na3 = 3*self.beads.natoms
 
       for b in range(self.beads.nbeads):
          for i in range(3):
