@@ -732,7 +732,7 @@ class Forces(dobject):
         """Submits all the required force calculations to the forcefields."""
 
         for ff in self.mforces:
-            if ff.weight > 0:  # do not compute forces which have zero weight
+            if ff.weight != 0:  # do not compute forces which have zero weight
                 ff.queue()
 
     def get_vir(self):
@@ -774,7 +774,7 @@ class Forces(dobject):
 
         fk = np.zeros((self.nbeads, 3 * self.natoms))
         for index in range(len(self.mforces)):
-            if len(self.mforces[index].mts_weights) > level and self.mforces[index].mts_weights[level] != 0 and self.mforces[index].weight > 0:
+            if len(self.mforces[index].mts_weights) > level and self.mforces[index].mts_weights[level] != 0 and self.mforces[index].weight != 0:
                 fk += self.mforces[index].weight * self.mforces[index].mts_weights[level] * self.mrpc[index].b2tob1(dstrip(self.mforces[index].f))
         return fk
 
@@ -957,7 +957,7 @@ class Forces(dobject):
         self.queue()
         rp = np.zeros((self.nbeads, 3, 3), float)
         for k in range(self.nforces):
-            if self.mforces[k].weight > 0:
+            if self.mforces[k].weight != 0:
                 virs = dstrip(self.mforces[k].virs)
                 # "expand" to the total number of beads the virials from the
                 # contracted one, element by element
