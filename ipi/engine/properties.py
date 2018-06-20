@@ -1514,7 +1514,7 @@ class Properties(dobject):
 
       dbeta = abs(float(fd_delta))
       beta = 1.0/(Constants.kb*self.ensemble.temp)
-
+      self.dcell.h = self.cell.h
       qc = depstrip(self.beads.qc)
       q = depstrip(self.beads.q)
       v0 = self.forces.pot/self.beads.nbeads
@@ -1613,6 +1613,7 @@ class Properties(dobject):
       beta = 1.0/(Constants.kb*self.ensemble.temp)
       self.dforces.omegan2 = self.forces.omegan2
       self.dforces.alpha = self.forces.alpha
+      self.dcell.h = self.cell.h
 
       qc = depstrip(self.beads.qc)
       q = depstrip(self.beads.q)
