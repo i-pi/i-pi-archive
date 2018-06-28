@@ -1091,11 +1091,11 @@ class Forces(dobject):
       return self.coeffsc_part_2 * depstrip(self.f_4th_order)
 
    def get_virssc_part_1(self):
-      """Obtains the linear component of Suzuki-Chin correction to the force."""
+      """Obtains the linear component of Suzuki-Chin correction to the virial."""
       return self.coeffsc_part_1.reshape((self.beads.nbeads, 1, 1)) * depstrip(self.virs)
 
    def get_virssc_part_2(self):
-      """Obtains the quadratic component of Suzuki-Chin correction to the force."""
+      """Obtains the quadratic component of Suzuki-Chin correction to the virial."""
       return self.coeffsc_part_2.reshape((self.beads.nbeads, 1, 1)) * depstrip(self.virs_4th_order)
 
    def get_fsc(self):
