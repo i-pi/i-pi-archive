@@ -1,19 +1,3 @@
-============
-PEP-8 UPDATE
-============
-
-We have moved to enforce minimal PEP-8 compliance (e.g. 4-whitespace indentation) on master.
-A branch reflecting the state of master before the change is in master-nopep8. People wanting
-to synchronize a branch and make it PEP-8 compliant should
-
-1. merge master-nopep8 to their branch
-2. run i-pi-pepper -p $IPI_ROOT (pepper.py can be found in the PEP-8 compliant master)
-3. merge master to the branch
-
-This should minimize headache. 
-
-This notice will be removed once most of the branches have been made PEP-8 compliant.
-
 ====
 i-PI
 ====
@@ -83,3 +67,21 @@ root directory of the i-PI project.
 ::
 
   $ nosetests -v
+
+============
+PEP-8 UPDATE
+============
+
+We have moved to enforce minimal PEP-8 compliance (e.g. 4-whitespace indentation) on master.
+A branch reflecting the state of master before the change is in master-nopep8. People wanting
+to synchronize a branch and make it PEP-8 compliant should
+
+1. merge master-nopep8 to their branch
+2. run i-pi-pepper -p $IPI_ROOT (pepper.py can be found in the PEP-8 compliant master)
+3. merge master to the branch
+
+This should minimize headache. 
+
+This notice will be removed once most of the branches have been made PEP-8 compliant.
+
+

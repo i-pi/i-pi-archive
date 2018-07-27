@@ -17,7 +17,9 @@
       </ffsocket>
   -->
   <system>
-    <normal_modes mode='pa-cmd' units='inversecm'>[500]</normal_modes>
+    <normal_modes>
+      <frequencies style='pa-cmd' units='inversecm'> [ 500 ]  </frequencies>
+    </normal_modes>
     <initialize nbeads='8'>
       <file mode='xyz'>init.xyz</file>
       <cell mode='abc'> [1.0, 1.0, 1.0] </cell>

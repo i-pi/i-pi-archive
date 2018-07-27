@@ -234,8 +234,9 @@ class Input(object):
         try:
             newfield = self.dynamic[name][0](**self.dynamic[name][1])
             newfield.parse(xml)
-        except:            
-            raise ValueError("Error parsing " + name + " from " + str(xml))
+        except:          
+            print "Error parsing " + name + " from " + str(xml)
+            raise 
         self.extra.append((name, newfield))
 
     def write(self, name="", indent="", text="\n"):

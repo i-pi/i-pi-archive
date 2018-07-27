@@ -49,7 +49,7 @@ class InputNMFrequencies(InputArray):
         of it.
 
         Args:
-            mf: A tuple containing a string and an arrat, ("MODE", [FREQS]).
+            mf: A tuple containing a string and an array, ("MODE", [FREQS]).
         """
         mode, freqs = mf
         super(InputNMFrequencies, self).store(freqs)
