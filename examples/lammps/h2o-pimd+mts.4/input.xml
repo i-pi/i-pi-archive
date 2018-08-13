@@ -8,10 +8,10 @@
   <prng>
     <seed>31415</seed>
   </prng>
-  <ffsocket name='lmpserial1' mode='unix'>
+  <ffsocket name='lmp_short' mode='unix'>
     <address>h2o-pimd+mts.4_short</address>
   </ffsocket>
-  <ffsocket name='lmpserial2' mode='unix'>
+  <ffsocket name='lmp_long' mode='unix'>
     <address>h2o-pimd+mts.4_long</address>
   </ffsocket>
   <system>
@@ -20,10 +20,15 @@
       <velocities mode='thermal' units='kelvin'> 300 </velocities>
     </initialize>
     <forces>
-      <force forcefield='lmpserial1'>
+       <!--
+         MTS setup - apply the fast (short-range) force in the inner loop and the slow (long-range) force in the outer loop. 
+         Note that if the outer loop contains a *correction* to the inner loop the weights should be 
+         [-1,1] (fast force) and [1,0] (slow force)
+       -->
+      <force forcefield='lmp_short'>
         <mts_weights>[0,1]</mts_weights>
       </force>
-      <force forcefield='lmpserial2'>
+      <force forcefield='lmp_long'>
         <mts_weights>[1,0]</mts_weights>
       </force>
     </forces>
