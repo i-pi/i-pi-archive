@@ -11,9 +11,11 @@ improper_style  harmonic
 
 pair_style      lj/charmm/coul/long 8 10
 pair_modify     mix arithmetic
-kspace_style    pppm 1e-4
 
+box tilt large
 read_data       data.lmp 
+
+kspace_style    pppm 1e-4
 
 special_bonds   charmm
 fix  1 all ipi paracetamol-phonons 1234 unix
