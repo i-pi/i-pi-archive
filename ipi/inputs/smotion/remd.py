@@ -41,6 +41,10 @@ class InputReplicaExchange(InputDictionary):
                                       "default"      : 1.0,
                                       "help"         : "Every how often to try exchanges (on average)."
                                       }),
+           "s_min" : (InputValue, {"dtype"        : int,
+                                      "default"      : 1,
+                                      "help"         : "The minimum number of steps before trying exchanges."
+                                      }),
            "krescale" : (InputValue, {"dtype"        : bool,
                                    "default"         : True,
                                    "help"            : "Rescale kinetic energy upon exchanges."}),
@@ -60,6 +64,7 @@ class InputReplicaExchange(InputDictionary):
     def store(self, remd):
         if remd == {}: return
         self.stride.store(remd.stride)
+        self.s_min.store(remd.s_min)
         self.repindex.store(remd.repindex)
         self.krescale.store(remd.rescalekin)
         self.swapfile.store(remd.swapfile)
