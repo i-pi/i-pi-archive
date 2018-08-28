@@ -2,7 +2,7 @@
 DEPENDENCIES init.xyz in.lmp data.lmp
 COMMAND(4) lmp_serial -i in.lmp
 ENDREGTEST -->
-<simulation verbosity='high'>
+<simulation verbosity='high' threading='false'>
   <output prefix='simulation'>
     <properties stride='4' filename='temp'>  [ step, time{picosecond}, temperature{kelvin}(1), temperature{kelvin}(2), temperature{kelvin}(0), temperature{kelvin}(O), temperature{kelvin}(H),  temperature{kelvin} ] </properties>
     <properties stride='4' filename='kine'>  [ step, time{picosecond}, conserved, kinetic_md(1), kinetic_md(2), kinetic_md(0), kinetic_md(O), kinetic_md(H), kinetic_md ] </properties>

@@ -2,7 +2,7 @@
 DEPENDENCIES init.pdb  in.lmp data.lmp
 COMMAND(4) lmp_serial -i in.lmp
 ENDREGTEST -->
-<simulation verbosity='high'>
+<simulation verbosity='high' threading='false'>
   <output prefix='simulation'>
     <properties stride='1' filename='out'> [ step, time{picosecond}, conserved, temperature{kelvin}, kinetic_cv, kinetic_td, potential, pressure_cv{megapascal}, spring ] </properties>
     <trajectory filename='pos' stride='1' cell_units='angstrom' format='xyz' bead='0'> positions{angstrom} </trajectory>

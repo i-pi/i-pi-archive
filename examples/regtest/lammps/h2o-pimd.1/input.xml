@@ -2,7 +2,7 @@
 DEPENDENCIES init.pdb  in.lmp data.lmp
 COMMAND(1) lmp_serial -i in.lmp
 ENDREGTEST -->
-<simulation verbosity='high'>
+<simulation verbosity='high' threading='false'>
   <output prefix='simulation'>
     <properties stride='1' filename='out'>  [ step, time{picosecond}, conserved{electronvolt}, temperature{kelvin}, kinetic_cv{electronvolt}, potential{electronvolt}, pressure_cv{megapascal} ] </properties>
     <trajectory filename='pos' stride='1'> positions </trajectory>

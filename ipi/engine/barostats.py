@@ -644,6 +644,8 @@ class BaroRGB(Barostat):
         # 6-vector or as a 3x3 upper triangular tensor.
         # we use a synchronizer to achieve that
 
+        dself = dd(self)
+
         sync_baro = synchronizer()
         dself.p6 = depend_array(name='p6', value=np.zeros(6, float),
                                 synchro=sync_baro, func={"p": self.get_3x3to6}
@@ -689,6 +691,8 @@ class BaroRGB(Barostat):
 
         # obtain the thermostat mass from the given time constant (1/3 of what used for the corresponding NPT case)
         # note that the barostat temperature is nbeads times the physical T
+        dself = dd(self)
+
         dself.m = depend_array(name='m', value=np.atleast_1d(0.0),
                                func=(lambda: np.asarray([self.tau**2 * self.beads.natoms * Constants.kb * self.temp])),
                                dependencies=[dself.tau, dself.temp])
