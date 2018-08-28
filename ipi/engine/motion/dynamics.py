@@ -486,8 +486,6 @@ class NPTIntegrator(NVTIntegrator):
 
         self.thermostat.step()
         self.barostat.thermostat.step()
-        self.thermostat.step()
-        self.barostat.thermostat.step()
         self.pconstraints()
 
 
