@@ -591,7 +591,7 @@ class Parameters:
     run_directory = 'regtest-run'
     test_cases_directory = '.'
     reference_directory = 'regtest-ref'
-    precision = 7
+    precision = 4
     driver_timeout = 600
     ipi_output_file = 'ipi_output.out'
     ipi_shutdown_time = 11
@@ -915,7 +915,7 @@ def compare_files(file1, file2):
             try:
                 float_in_file1 = float(word_in_file1)
                 float_in_file2 = float(word_in_file2)
-                if not np.isclose(float_in_file1, float_in_file2):
+                if not np.isclose(float_in_file1, float_in_file2, rtol=precision):
                     differences.append((line_count, word_count))
             except ValueError:
                 if not word_in_file1 == word_in_file2:
