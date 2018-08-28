@@ -21,6 +21,7 @@ from ..utils import units
 
 
 class Client(DriverSocket):
+
     """Base class for the implementation of a client in Python.
 
     Handles sending and receiving data from the client code.
@@ -59,9 +60,9 @@ class Client(DriverSocket):
 
         # allocate data
         self.havedata = False
-        self._vir = np.zeros((3,3), np.float64)
-        self._cellh = np.zeros((3,3), np.float64)
-        self._cellih = np.zeros((3,3), np.float64)
+        self._vir = np.zeros((3, 3), np.float64)
+        self._cellh = np.zeros((3, 3), np.float64)
+        self._cellih = np.zeros((3, 3), np.float64)
         self._nat = np.int32()
         self._callback = None
 
@@ -148,8 +149,8 @@ class Client(DriverSocket):
                     self.sendall(Message("forceready"))
                     self.sendall(self._potential, 8)
                     self.sendall(self._nat, 4)
-                    self.sendall(self._force, 8*self._force.size)
-                    self.sendall(self._vir, 9*8)
+                    self.sendall(self._force, 8 * self._force.size)
+                    self.sendall(self._vir, 9 * 8)
                     self.sendall(np.int32(0), 4)
                     self.havedata = False
                 else:
@@ -158,12 +159,12 @@ class Client(DriverSocket):
 
                 # check exit conditions - run time or exit file
                 if t_max is not None and time.time() - t0 > t_max:
-                        print 'Maximum run time of {0:d} seconds exceeded.'.format(t_max)
-                        break
+                    print 'Maximum run time of {0:d} seconds exceeded.'.format(t_max)
+                    break
                 if fn_exit is not None and os.path.exists(fn_exit):
-                        print 'Exit file "{0:s}" found. Removing file.'.format(fn_exit)
-                        os.remove(fn_exit)
-                        break
+                    print 'Exit file "{0:s}" found. Removing file.'.format(fn_exit)
+                    os.remove(fn_exit)
+                    break
 
         except socket.error as e:
             print 'Error communicating through socket: [{0}] {1}'.format(e.errno, e.strerror)
@@ -175,6 +176,7 @@ class Client(DriverSocket):
 
 
 class ClientASE(Client):
+
     """Socket client that calls an ASE calculator to get interactions.
 
     Atomic Simulation Environment:
@@ -220,15 +222,15 @@ class ClientASE(Client):
         self._potential[:] = np.array([atoms.get_potential_energy() * self.eV])
 
         # DEBUG
-        #print 'positions for ASE:'
-        #print self._positions / self.Angstrom
-        #print
-        #print 'cell for ASE:'
-        #print self._cellh / self.Angstrom
-        #print
-        #print 'potential energy [Ha]:'
-        #print self._potential
-        #print
-        #print 'forces [atomic units]:'
-        #print self._force
-        #print
+        # print 'positions for ASE:'
+        # print self._positions / self.Angstrom
+        # print
+        # print 'cell for ASE:'
+        # print self._cellh / self.Angstrom
+        # print
+        # print 'potential energy [Ha]:'
+        # print self._potential
+        # print
+        # print 'forces [atomic units]:'
+        # print self._force
+        # print

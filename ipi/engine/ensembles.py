@@ -28,26 +28,29 @@ from ipi.engine.forces import Forces, ScaledForceComponent
 
 __all__ = ['Ensemble', 'ensemble_swap']
 
-### IMPORTANT - THIS MUST BE KEPT UP-TO-DATE WHEN THE ENSEMBLE CLASS IS CHANGED
+# IMPORTANT - THIS MUST BE KEPT UP-TO-DATE WHEN THE ENSEMBLE CLASS IS CHANGED
+
+
 def ensemble_swap(ens1, ens2):
     """ Swaps the definitions of the two ensembles, by
     exchanging all of the inner properties. """
 
-    if ens1.temp != ens2.temp :
+    if ens1.temp != ens2.temp:
         ens1.temp, ens2.temp = ens2.temp, ens1.temp
-    if ens1.pext != ens2.pext :
+    if ens1.pext != ens2.pext:
         ens1.pext, ens2.pext = ens2.pext, ens1.pext
     if len(ens1.bweights) != len(ens2.bweights):
         raise ValueError("Cannot exchange ensembles that have different numbers of bias components")
     if len(ens1.hweights) != len(ens2.hweights):
         raise ValueError("Cannot exchange ensembles that are described by different forces")
     if not np.array_equal(ens1.bweights, ens2.bweights):
-        ens1.bweights, ens2.bweights = depstrip(ens2.bweights).copy(), depstrip(ens1.bweights).copy()
+        ens1.bweights, ens2.bweights = dstrip(ens2.bweights).copy(), dstrip(ens1.bweights).copy()
     if not np.array_equal(ens1.hweights, ens2.hweights):
-        ens1.hweights, ens2.hweights = depstrip(ens2.hweights).copy(), depstrip(ens1.hweights).copy()
+        ens1.hweights, ens2.hweights = dstrip(ens2.hweights).copy(), dstrip(ens1.hweights).copy()
 
 
 class Ensemble(dobject):
+
     """Base ensemble class.
 
     Defines the thermodynamic state of the system.
@@ -67,26 +70,28 @@ class Ensemble(dobject):
             fixcom: An optional boolean which decides whether the centre of mass
                 motion will be constrained or not. Defaults to False.
         """
+        dself = dd(self)
 
-        dset(self, "temp", depend_value(name='temp'))
+        dself.temp = depend_value(name='temp')
         if temp is not None:
             self.temp = temp
         else:
             self.temp = -1.0
 
-        dset(self, "stressext", depend_array(name='stressext', value=np.zeros((3,3), float)))
+        dself.stressext = depend_array(name='stressext',
+                                       value=np.zeros((3, 3), float))
         if stressext is not None:
-            self.stressext = np.reshape(np.asarray(stressext), (3,3))
+            self.stressext = np.reshape(np.asarray(stressext), (3, 3))
         else:
             self.stressext = -1.0
 
-        dset(self, "pext", depend_value(name='pext'))
+        dself.pext = depend_value(name='pext')
         if pext is not None:
             self.pext = pext
         else:
             self.pext = -1.0
 
-        dset(self, "eens", depend_value(name='eens'))
+        dself.eens = depend_value(name='eens')
         if eens is not None:
             self.eens = eens
         else:
@@ -95,7 +100,7 @@ class Ensemble(dobject):
         # the bias force contains two bits: explicit biases (that are meant to represent non-physical external biasing potentials)
         # and hamiltonian weights (that will act by scaling different physical components of the force). Both are bound as components
         # of the "bias force" evaluator, but their meaning (and the wiring further down in bind()) differ.
-        
+
         # these are the additional bias components
         if bcomponents is None:
             bcomponents = []
@@ -103,66 +108,67 @@ class Ensemble(dobject):
         self.bias = Forces()
 
         # and their weights
-        if bweights is None or len(bweights)==0:
+        if bweights is None or len(bweights) == 0:
             bweights = np.ones(len(self.bcomp))
-        
-        dset(self, "bweights", depend_array(name="bweights", value = np.asarray(bweights)) )
+
+        dself.bweights = depend_array(name="bweights", value=np.asarray(bweights))
 
         # weights of the Hamiltonian scaling
         if hweights is None:
             hweights = np.ones(0)
         self.hweights = np.asarray(hweights)
 
-
     def bind(self, beads, nm, cell, bforce, fflist, elist=[], xlpot=[], xlkin=[]):
         self.beads = beads
         self.cell = cell
         self.forces = bforce
         self.nm = nm
+        dself = dd(self)
+        dself.econs = depend_value(name='econs', func=self.get_econs)
 
         # this binds just the explicit bias forces
-        self.bias.bind(self.beads, self.cell, self.bcomp, fflist)        
+        self.bias.bind(self.beads, self.cell, self.bcomp, fflist)
 
-        dset(self, "econs", depend_value(name='econs', func=self.get_econs))
+        dself.econs = depend_value(name='econs', func=self.get_econs)
         # dependencies of the conserved quantity
-        dget(self, "econs").add_dependency(dget(self.nm, "kin"))
-        dget(self, "econs").add_dependency(dget(self.forces, "pot"))
-        dget(self, "econs").add_dependency(dget(self.bias, "pot"))
-        dget(self, "econs").add_dependency(dget(self.nm, "vspring"))
-        dget(self, "econs").add_dependency(dget(self, "eens"))
+        dself.econs.add_dependency(dd(self.nm).kin)
+        dself.econs.add_dependency(dd(self.forces).pot)
+        dself.econs.add_dependency(dd(self.bias).pot)
+        dself.econs.add_dependency(dd(self.nm).vspring)
+        dself.econs.add_dependency(dself.eens)
 
         # pipes the weights to the list of weight vectors
         i = 0
         for fc in self.bias.mforces:
             if fc.weight != 1:
                 warning("The weight given to forces used in an ensemble bias are given a weight determined by bias_weight")
-            deppipe(self, "bweights", fc, "weight", i)
+            dpipe(dself.bweights, dd(fc).weight, i)
             i += 1
 
         # add Hamiltonian REM bias components
         if len(self.hweights) == 0:
             self.hweights = np.ones(len(self.forces.mforces))
 
-        dset(self, "hweights", depend_array(name="hweights", value = np.asarray(self.hweights)) )
+        dself.hweights = depend_array(name="hweights", value=np.asarray(self.hweights))
 
         # we use ScaledForceComponents to replicate the physical forces without (hopefully) them being actually recomputed
         for ic in xrange(len(self.forces.mforces)):
-            sfc=ScaledForceComponent(self.forces.mforces[ic],1.0)
+            sfc = ScaledForceComponent(self.forces.mforces[ic], 1.0)
             self.bias.add_component(self.forces.mbeads[ic], self.forces.mrpc[ic], sfc)
-            dget(sfc,"scaling")._func = lambda i=ic : self.hweights[i]-1
-            dget(sfc,"scaling").add_dependency(dget(self, "hweights"))
+            dd(sfc).scaling._func = lambda i=ic: self.hweights[i] - 1
+            dd(sfc).scaling.add_dependency(dself.hweights)
 
         self._elist = []
 
         for e in elist:
             self.add_econs(e)
 
-        dset(self, "lpens", depend_value(name='lpens', func=self.get_lpens,
-                dependencies=[ dget(self,"temp") ] ))
-        dget(self, "lpens").add_dependency(dget(self.nm, "kin"))
-        dget(self, "lpens").add_dependency(dget(self.forces, "pot"))
-        dget(self, "lpens").add_dependency(dget(self.bias, "pot"))
-        dget(self, "lpens").add_dependency(dget(self.nm, "vspring"))
+        dself.lpens = depend_value(name='lpens', func=self.get_lpens,
+                                   dependencies=[dself.temp])
+        dself.lpens.add_dependency(dd(self.nm).kin)
+        dself.lpens.add_dependency(dd(self.forces).pot)
+        dself.lpens.add_dependency(dd(self.bias).pot)
+        dself.lpens.add_dependency(dd(self.beads).vpath)
 
         # extended Lagrangian terms for the ensemble
         self._xlpot = []
@@ -173,28 +179,28 @@ class Ensemble(dobject):
         for k in xlkin:
             self.add_xlkin(k)
 
-
     def add_econs(self, e):
         self._elist.append(e)
-        dget(self, "econs").add_dependency(e)
+        dd(self).econs.add_dependency(e)
 
     def add_xlpot(self, p):
         self._xlpot.append(p)
-        dget(self, "lpens").add_dependency(p)
+        dd(self).lpens.add_dependency(p)
 
     def add_xlkin(self, k):
         self._xlkin.append(k)
-        dget(self, "lpens").add_dependency(k)
+        dd(self).lpens.add_dependency(k)
 
     def get_econs(self):
         """Calculates the conserved energy quantity for constant energy
         ensembles.
         """
+
         eham = self.nm.vspring + self.nm.kin + self.forces.pot
         eham += self.bias.pot   # bias
         for e in self._elist:
             eham += e.get()
-        
+
         return eham + self.eens
 
     def get_lpens(self):
@@ -202,8 +208,7 @@ class Ensemble(dobject):
         for the ensemble.
         """
 
-
-        lpens = (self.forces.pot+self.bias.pot+self.nm.kin+self.nm.vspring);
+        lpens = (self.forces.pot + self.bias.pot + self.nm.kin + self.beads.vpath * self.nm.omegan2);
 
         # inlcude terms associated with an extended Lagrangian integrator of some sort
         for p in self._xlpot:
@@ -211,5 +216,5 @@ class Ensemble(dobject):
         for k in self._xlkin:
             lpens += k.get()
 
-        lpens *= -1.0/(Constants.kb*self.temp*self.beads.nbeads)
+        lpens *= -1.0 / (Constants.kb * self.temp * self.beads.nbeads)
         return lpens

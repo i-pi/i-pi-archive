@@ -19,112 +19,112 @@ __all__ = ['Cell']
 
 
 class Cell(dobject):
-   """Base class to represent the simulation cell in a periodic system.
 
-   This class has the base attributes required for either flexible or
-   isotropic cell dynamics. Uses an upper triangular lattice vector matrix to
-   represent the cell.
+    """Base class to represent the simulation cell in a periodic system.
 
-   Depend objects:
-      h: An array giving the lattice vector matrix.
-      ih: An array giving the inverse of the lattice vector matrix.
-      V: The volume of the cell.
-   """
+    This class has the base attributes required for either flexible or
+    isotropic cell dynamics. Uses an upper triangular lattice vector matrix to
+    represent the cell.
 
-   def __init__(self, h=None):
-      """Initialises base cell class.
+    Depend objects:
+       h: An array giving the lattice vector matrix.
+       ih: An array giving the inverse of the lattice vector matrix.
+       V: The volume of the cell.
+    """
 
-      Args:
-         h: Optional array giving the initial lattice vector matrix. The
-            reference cell matrix is set equal to this. Must be an upper
-            triangular 3*3 matrix. Defaults to a 3*3 zeroes matrix.
-      """
+    def __init__(self, h=None):
+        """Initialises base cell class.
 
-      if h is None:
-         h = np.zeros((3,3), float)
-         
-      dself = dd(self) # gets a direct-access view to self
+        Args:
+           h: Optional array giving the initial lattice vector matrix. The
+              reference cell matrix is set equal to this. Must be an upper
+              triangular 3*3 matrix. Defaults to a 3*3 zeroes matrix.
+        """
 
-      dself.h = depend_array(name='h', value=h)
-      dself.ih = depend_array(name="ih", value=np.zeros((3,3),float),
-            func=self.get_ih, dependencies=[dself.h])
-      dself.V = depend_value(name='V', func=self.get_volume,
-            dependencies=[dself.h])
+        if h is None:
+            h = np.zeros((3, 3), float)
 
-   def copy(self):
-      return Cell(depstrip(self.h).copy())
+        dself = dd(self)  # gets a direct-access view to self
 
-   def get_ih(self):
-      """Inverts the lattice vector matrix."""
+        dself.h = depend_array(name='h', value=h)
+        dself.ih = depend_array(name="ih", value=np.zeros((3, 3), float),
+                                func=self.get_ih, dependencies=[dself.h])
+        dself.V = depend_value(name='V', func=self.get_volume,
+                               dependencies=[dself.h])
 
-      return invert_ut3x3(self.h)
+    def copy(self):
+        return Cell(dstrip(self.h).copy())
 
-   def get_volume(self):
-      """Calculates the volume of the system box."""
+    def get_ih(self):
+        """Inverts the lattice vector matrix."""
 
-      return det_ut3x3(self.h)
+        return invert_ut3x3(self.h)
 
-   def apply_pbc(self, atom):
-      """Uses the minimum image convention to return a particle to the
-         unit cell.
+    def get_volume(self):
+        """Calculates the volume of the system box."""
 
-      Args:
-         atom: An Atom object.
+        return det_ut3x3(self.h)
 
-      Returns:
-         An array giving the position of the image that is inside the
-         system box.
-      """
+    def apply_pbc(self, atom):
+        """Uses the minimum image convention to return a particle to the
+           unit cell.
 
-      s = np.dot(self.ih,atom.q)
+        Args:
+           atom: An Atom object.
 
+        Returns:
+           An array giving the position of the image that is inside the
+           system box.
+        """
 
-      for i in range(3):
-         s[i] = s[i] - round(s[i])
+        s = np.dot(self.ih, atom.q)
 
-      return np.dot(self.h,s)
+        for i in range(3):
+            s[i] = s[i] - round(s[i])
 
-   def array_pbc(self, pos):
-      """Uses the minimum image convention to return a list of particles to the
-         unit cell.
+        return np.dot(self.h, s)
 
-      Args:
-         atom: An Atom object.
+    def array_pbc(self, pos):
+        """Uses the minimum image convention to return a list of particles to the
+           unit cell.
 
-      Returns:
-         An array giving the position of the image that is inside the
-         system box.
-      """
+        Args:
+           atom: An Atom object.
 
-      s = depstrip(pos).copy()
-      s.shape = (len(pos)/3,3)
+        Returns:
+           An array giving the position of the image that is inside the
+           system box.
+        """
 
-      s = np.dot(depstrip(self.ih),s.T)
-      s = s - np.round(s)
+        s = dstrip(pos).copy()
+        s.shape = (len(pos) / 3, 3)
 
-      s = np.dot(depstrip(self.h),s).T
+        s = np.dot(dstrip(self.ih), s.T)
+        s = s - np.round(s)
 
-      pos[:] = s.reshape((len(s)*3))
+        s = np.dot(dstrip(self.h), s).T
 
-   def minimum_distance(self, atom1, atom2):
-      """Takes two atoms and tries to find the smallest vector between two
-      images.
+        pos[:] = s.reshape((len(s) * 3))
 
-      This is only rigorously accurate in the case of a cubic cell,
-      but gives the correct results as long as the cut-off radius is defined
-      as smaller than the smallest width between parallel faces even for
-      triclinic cells.
+    def minimum_distance(self, atom1, atom2):
+        """Takes two atoms and tries to find the smallest vector between two
+        images.
 
-      Args:
-         atom1: An Atom object.
-         atom2: An Atom object.
+        This is only rigorously accurate in the case of a cubic cell,
+        but gives the correct results as long as the cut-off radius is defined
+        as smaller than the smallest width between parallel faces even for
+        triclinic cells.
 
-      Returns:
-         An array giving the minimum distance between the positions of atoms
-         atom1 and atom2 in the minimum image convention.
-      """
+        Args:
+           atom1: An Atom object.
+           atom2: An Atom object.
 
-      s = np.dot(self.ih,atom1.q-atom2.q)
-      for i in range(3):
-         s[i] -= round(s[i])
-      return np.dot(self.h, s)
+        Returns:
+           An array giving the minimum distance between the positions of atoms
+           atom1 and atom2 in the minimum image convention.
+        """
+
+        s = np.dot(self.ih, atom1.q - atom2.q)
+        for i in range(3):
+            s[i] -= round(s[i])
+        return np.dot(self.h, s)

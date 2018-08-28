@@ -33,19 +33,19 @@ os.environ['GAUSS_SCRDIR'] = '/dev/shm'
 atoms = ase.io.read('init.xyz')
 atoms.set_calculator(
     Gaussian(
-        method = 'MP2',
+        method='MP2',
         # Note that 6-31G is for faster testing only, not a good basis set
         # for gas-phase W2. Use the bigger one instead.
-        basis = '6-31G',
-        #basis = '6-311++G**',
-        nproc = nthreads,
-        label = dir_calc + '/calculator'
+        basis='6-31G',
+        # basis = '6-311++G**',
+        nproc=nthreads,
+        label=dir_calc + '/calculator'
     )
 )
 
 # create the socket client...
 client = ClientASE(atoms, address='ase')
-#client = ClientASE(atoms, mode='inet', address='localhost', port=12345)
+# client = ClientASE(atoms, mode='inet', address='localhost', port=12345)
 
 # ... and run it
 client.run(t_max=35, fn_exit='EXIT_ASE')   # test max run time feature

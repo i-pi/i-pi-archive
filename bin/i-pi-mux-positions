@@ -20,8 +20,8 @@ input files.
 
 def main(fns_in, fn_out, begin, end, stride):
 
-    verbosity.level = "low" 
-    
+    verbosity.level = "low"
+
     print('Multiplexing {:d} beads into one trajectory.'.format(len(fns_in)))
     print()
 

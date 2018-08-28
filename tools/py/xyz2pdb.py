@@ -22,24 +22,24 @@ from ipi.utils.units import *
 
 def main(filename, wrap=True):
 
-   ipos=open(filename,"r")
-   if( wrap == "False"):
-      wrap = False
+    ipos = open(filename, "r")
+    if(wrap == "False"):
+        wrap = False
 
-   natoms = 0
-   ifr = 0
-   while True:
-      try:
-         ret = read_file("xyz", ipos)
-         pos = ret["atoms"]
-         cell = ret["cell"]
-         if(wrap): cell.array_pbc(pos.q)
-      except EOFError: # finished reading files
-         sys.exit(0)
+    natoms = 0
+    ifr = 0
+    while True:
+        try:
+            ret = read_file("xyz", ipos)
+            pos = ret["atoms"]
+            cell = ret["cell"]
+            if(wrap): cell.array_pbc(pos.q)
+        except EOFError:  # finished reading files
+            sys.exit(0)
 
-      print_file("pdb", pos, cell)
-      ifr+=1
+        print_file("pdb", pos, cell)
+        ifr += 1
 
 
 if __name__ == '__main__':
-   main(*sys.argv[1:])
+    main(*sys.argv[1:])

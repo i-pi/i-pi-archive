@@ -23,7 +23,7 @@ import os
 
 # Check that we have the import path for this i-PI set and if not, add it.
 dir_root = os.path.realpath(
-               os.path.join(os.path.dirname(os.path.realpath(__file__)), '..'))
+    os.path.join(os.path.dirname(os.path.realpath(__file__)), '..'))
 if not dir_root in sys.path:
     sys.path.insert(0, dir_root)
 
@@ -31,21 +31,21 @@ from ipi.utils.softexit import softexit
 from ipi.engine.simulation import Simulation
 
 
-def main(fn_input, do_yappi=False):
+def main(fn_input, options):
     """Loads and runs the simulation stored in `fn_input`."""
 
     # optionally profile this run - set up
-    #~ if do_yappi:
-        #~ try:
-            #~ import yappi
-            #~ yappi.start(builtins=True, profile_threads=True)
-        #~ except ImportError:
-            #~ print 'Profiling with yappi was enabled but could not be imported.'
-            #~ print "Profiling with yappi was enabled but could not be imported."
-            #~ sys.exit(1)
+    # ~ if do_yappi:
+    # ~ try:
+    # ~ import yappi
+    #~ yappi.start(builtins=True, profile_threads=True)
+    # ~ except ImportError:
+    # ~ print 'Profiling with yappi was enabled but could not be imported.'
+    # ~ print "Profiling with yappi was enabled but could not be imported."
+    #~ sys.exit(1)
 
     # construct simulation based on input file
-    simulation = Simulation.load_from_xml(fn_input, request_banner=True)
+    simulation = Simulation.load_from_xml(fn_input, request_banner=True, custom_verbosity=options.verbosity)
 
     # run the simulation
     simulation.run()
@@ -54,7 +54,7 @@ def main(fn_input, do_yappi=False):
     # TODO
     # We do not get to this if the run is ctrl interrupted and exits cleanly.
     # Maybe the profiler should be global and cleaned up on exit?
-    if do_yappi:
+    if options.do_yappi:
         yappi.stop()
         yappi.get_thread_stats().print_all()
         yfs = yappi.get_func_stats()
@@ -79,11 +79,15 @@ if __name__ == '__main__':
     parser = OptionParser(usage='%prog [options] <input file>',
                           description='The main i-PI executable used to run '
                                       'a simulation, given an XML input file.'
-                         )
+                          )
 
     parser.add_option('-p', '--profile',
                       action='store_true', dest='do_yappi', default=False,
                       help='Profile this run using Yappi.')
+
+    parser.add_option('-V', '--verbosity', dest='verbosity', default=None,
+                      choices=['quiet', 'low', 'medium', 'high', 'debug'],
+                      help='Define the verbosity level.')
 
     options, args = parser.parse_args()
 
@@ -98,4 +102,4 @@ if __name__ == '__main__':
             parser.error('Input file not found: {:s}'.format(fn_in))
 
     # Everything is ready. Go!
-    main(args[0], options.do_yappi)
+    main(args[0], options)

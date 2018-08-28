@@ -18,7 +18,6 @@ from ipi.utils.softexit import softexit
 from ipi.utils.messages import verbosity, info
 
 
-
 __all__ = ['MetaDyn']
 
 
@@ -26,38 +25,36 @@ class MetaDyn(Smotion):
     """Metadynamics routine based on a FFPlumed forcefield.
 
     Attributes:
-        
+
     """
 
-    def __init__(self, metaff = ""):
+    def __init__(self, metaff=""):
         """Initialises REMD.
 
         Args:
         """
 
-        super(MetaDyn,self).__init__()        
+        super(MetaDyn, self).__init__()
         self.metaff = metaff
-        
 
     def bind(self, syslist, prng):
 
-        super(MetaDyn,self).bind(syslist, prng)
-        
+        super(MetaDyn, self).bind(syslist, prng)
 
     def step(self, step=None):
         """Updates metad bias."""
-        
+
         for s in self.syslist:
-            oldf = depstrip(s.forces.f).copy()            
+            oldf = dstrip(s.forces.f).copy()
             for k, f in s.ensemble.bias.ff.iteritems():
-                if not k == self.metaff: 
+                if not k == self.metaff:
                     continue  # only does metad for the indicated forcefield
                 if not hasattr(f, "mtd_update"):  # forcefield does not expose mtd_update interface
                     raise ValueError("The forcefield associated with metadynamics does not have a mtd_update interface")
                 fmtd = f.mtd_update(pos=s.beads.qc, cell=s.cell.h)
-                if fmtd:  # if metadyn has updated, then we must recompute forces. 
-                    # hacky but cannot think of a better way: we must manually taint *just* that component 
+                if fmtd:  # if metadyn has updated, then we must recompute forces.
+                    # hacky but cannot think of a better way: we must manually taint *just* that component
                     for fc in s.ensemble.bias.mforces:
                         if fc.ffield == k:
                             for fb in fc._forces:
-                                dd(fb).ufvx.taint()                
+                                dd(fb).ufvx.taint()

@@ -36,11 +36,11 @@ class InputMetaDyn(InputDictionary):
 
     """
 
-    fields={
-           "metaff" : (InputValue, {"dtype"        : str,      "default" :"",                                 
-                                      "help"         : "Name of the forcefield that does metadynamics."
-                                      })                                      
-         }
+    fields = {
+        "metaff": (InputValue, {"dtype": str, "default": "",
+                                "help": "Name of the forcefield that does metadynamics."
+                                })
+    }
 
     default_help = "MetaDynamics"
     default_label = "META"
@@ -50,5 +50,5 @@ class InputMetaDyn(InputDictionary):
         self.metaff.store(meta.metaff)
 
     def fetch(self):
-        rv = super(InputMetaDyn,self).fetch()
+        rv = super(InputMetaDyn, self).fetch()
         return rv

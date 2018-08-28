@@ -31,69 +31,68 @@ from ipi.utils.units import *
 
 __all__ = ['InputSmotion']
 
-    
+
 class InputSmotion(Input):
-   """Smotion calculation input class.
+    """Smotion calculation input class.
 
-   A class to encompass the different "smootion" :) calculations.
+    A class to encompass the different "smootion" :) calculations.
 
-   Attributes:
-      mode: An obligatory string giving the kind of smootion calculation to be performed.
+    Attributes:
+       mode: An obligatory string giving the kind of smootion calculation to be performed.
 
-   Fields:
+    Fields:
 
-   """
+    """
 
-   attribs={"mode"  : (InputAttribute, {"dtype"   : str,
-                                    "help"    : "Kind of smotion which should be performed.",
-                                    "options" : ['dummy', 'remd', 'metad']}) }
-   fields={"remd" : ( InputReplicaExchange, { "default" : {},
-                                     "help":  "Option for REMD simulation" } ),
-           "metad" : ( InputMetaDyn, { "default" : {},
-                                     "help":  "Option for REMD simulation" } ) }
-                                     
-                                     
+    attribs = {"mode": (InputAttribute, {"dtype": str,
+                                         "help": "Kind of smotion which should be performed.",
+                                         "options": ['dummy', 'remd', 'metad']})}
+    fields = {"remd": (InputReplicaExchange, {"default": {},
+                                              "help": "Option for REMD simulation"}),
+              "metad": (InputMetaDyn, {"default": {},
+                                       "help": "Option for REMD simulation"})}
 
-   dynamic = {  }
+    dynamic = {}
 
-   default_help = "Allow chosing the type of smotion to be performed. Holds all the information that is calculation specific, such as replica exchange parameters, etc."
-   default_label = "SMOTION"
+    default_help = "Allow chosing the type of smotion to be performed. Holds all the information that is calculation specific, such as replica exchange parameters, etc."
+    default_label = "SMOTION"
 
-   def store(self, sc):
-      """Takes a smootion calculation instance and stores a minimal representation of it.
+    def store(self, sc):
+        """Takes a smootion calculation instance and stores a minimal representation of it.
 
-      Args:
-         sc: A smootion calculation class.
-      """
+        Args:
+           sc: A smootion calculation class.
+        """
 
-      super(InputSmotion, self).store(sc)
+        super(InputSmotion, self).store(sc)
 
-      if type(sc) is Smotion:
-          self.mode.store("dummy")
-      elif type(sc) is ReplicaExchange:
-         self.mode.store("remd")
-         self.remd.store(sc)
-      elif type(sc) is MetaDyn:
-          self.mode.store("metad")
-      else:
-         raise ValueError("Cannot store Smotion calculator of type "+str(type(sc)))
+        if type(sc) is Smotion:
+            self.mode.store("dummy")
+        elif type(sc) is ReplicaExchange:
+            self.mode.store("remd")
+            self.remd.store(sc)
+        elif type(sc) is MetaDyn:
+            self.mode.store("metad")
+            self.metad.store(sc)
+        else:
+            raise ValueError("Cannot store Smotion calculator of type " + str(type(sc)))
 
-   def fetch(self):
-      """Creates a smootion calculator object.
+    def fetch(self):
+        """Creates a smootion calculator object.
 
-      Returns:
-         An ensemble object of the appropriate mode and with the appropriate
-         objects given the attributes of the InputEnsemble object.
-      """
+        Returns:
+           An ensemble object of the appropriate mode and with the appropriate
+           objects given the attributes of the InputEnsemble object.
+        """
 
-      super(InputSmotion, self).fetch()
+        super(InputSmotion, self).fetch()
 
-      if self.mode.fetch() == "remd":
-         sc = ReplicaExchange(**self.remd.fetch())
-      elif self.mode.fetch() == "metad":         
-         sc = MetaDyn(**self.metad.fetch())
-      else:
-         sc = Smotion()
-         #raise ValueError("'" + self.mode.fetch() + "' is not a supported motion calculation mode.")
+        if self.mode.fetch() == "remd":
+            sc = ReplicaExchange(**self.remd.fetch())
+        elif self.mode.fetch() == "metad":
+            sc = MetaDyn(**self.metad.fetch())
+        else:
+            sc = Smotion()
+            #raise ValueError("'" + self.mode.fetch() + "' is not a supported motion calculation mode.")
 
-      return sc
+        return sc

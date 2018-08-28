@@ -12,14 +12,16 @@ import sys
 __all__ = ['Verbosity', 'verbosity', 'banner', 'info', 'warning']
 
 
-VERB_QUIET  = 0
-VERB_LOW    = 1
+VERB_QUIET = 0
+VERB_LOW = 1
 VERB_MEDIUM = 2
-VERB_HIGH   = 3
-VERB_DEBUG  = 4
-VERB_TRACE  = 5
+VERB_HIGH = 3
+VERB_DEBUG = 4
+VERB_TRACE = 5
+
 
 class Verbosity(object):
+
     """Class used to determine what to print to standard output.
 
     Attributes:
@@ -99,7 +101,7 @@ def banner():
 
     print """
  ____       ____       ____       ____
-/    \     /    \     /    \     /    \ 
+/    \     /    \     /    \     /    \
 |  #################################  |
 \__#_/     \____/     \____/     \_#__/
    #    _        _______  _____    #

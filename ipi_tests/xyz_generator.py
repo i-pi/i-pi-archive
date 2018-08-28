@@ -9,15 +9,16 @@ from copy import copy
 all_elem = Elements.mass_list.keys()
 at_names = None
 
+
 def xyz_rand(natoms, comment, names=None):
     """ Generate a fake xyz file. Atoms and coordinates are random.
     """
 
     global at_names
     xyz = np.random.random((natoms, 3))
-    xyz = (xyz * 10 - 5) # To have both, positive and negative numbers
+    xyz = (xyz * 10 - 5)  # To have both, positive and negative numbers
     if not names:
-    # if True:
+        # if True:
         at_names = [all_elem[i] for i in
                     np.random.randint(0, len(all_elem), natoms)]
 
@@ -28,7 +29,7 @@ def xyz_rand(natoms, comment, names=None):
     output += comment
     for i in xrange(natoms):
         output += '%8s %12.5e %12.5e %12.5e\n' % \
-        (at_names[i], xyz[i, 0], xyz[i, 1], xyz[i, 2])
+            (at_names[i], xyz[i, 0], xyz[i, 1], xyz[i, 2])
     return (output, xyz.flatten(), copy(at_names))
 
 
@@ -44,6 +45,7 @@ def xyz_traj(natoms, nframe, comment):
 
     return (output, xyz, all_names)
 
+
 def xyz_traj_filedesc(natoms, nframe, comment):
     """ Generate a file descriptor containing a fake xyz trajectory.
     """
@@ -56,7 +58,7 @@ def xyz_traj_filedesc(natoms, nframe, comment):
 
 # if __name__ == '__main__':
 
-#     # Fast autocheck... if the test is wrong itself... it is bad ;)
+# Fast autocheck... if the test is wrong itself... it is bad ;)
 #     natoms = 100
 #     raw = xyz_traj_filedesc(natoms, 200, '')
 
@@ -72,12 +74,12 @@ def xyz_traj_filedesc(natoms, nframe, comment):
 #             frames += 1
 #             atoms = 0
 #         if len(fields) > 1:
-#             print 'Atom #', atoms, 'Frame #', frames+1
-#             print 'Check name of atoms #' + str(fields[0]) +\
-#                 '# == #' + str(raw[2][atoms]) + '#'
+# print 'Atom #', atoms, 'Frame #', frames+1
+# print 'Check name of atoms #' + str(fields[0]) +\
+# '# == #' + str(raw[2][atoms]) + '#'
 #             assert fields[0] == raw[2][atoms]
 #             for _i in xrange(3):
-#                 print 'Check coordinate of atoms #'+str(frames* natoms *3 + atoms*3+_i) + \
+# print 'Check coordinate of atoms #'+str(frames* natoms *3 + atoms*3+_i) + \
 #                     ' ==> ' + str(float(fields[_i+1]) -
 #                                   float(raw[1][frames * atoms*3+_i]))+\
 #                     ' < 1E-9 ('+str(fields[_i+1])  + '  ' +\

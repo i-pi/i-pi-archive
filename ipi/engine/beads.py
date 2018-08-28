@@ -22,287 +22,287 @@ __all__ = ['Beads']
 
 
 class Beads(dobject):
-   """Storage for the beads positions and velocities.
 
-   Everything is stored as (nbeads,3*natoms) sized contiguous arrays,
-   and a convenience-access to each replica of the system is provided through a
-   list of Atoms objects. Contains arrays of both the normal mode representation
-   and the position representation, and various sized arrays for the atom
-   labels and masses. Also contains the potential and force between
-   neighbouring replicas.
+    """Storage for the beads positions and velocities.
 
-   Attributes:
-      natoms: The number of atoms.
-      nbeads: The number of beads.
-      _blist: A list of Atoms objects for each replica of the system. Each
-         replica is assumed to have the same mass and atom label.
-      centroid: An atoms object giving the centroid coordinate of the beads.
+    Everything is stored as (nbeads,3*natoms) sized contiguous arrays,
+    and a convenience-access to each replica of the system is provided through a
+    list of Atoms objects. Contains arrays of both the normal mode representation
+    and the position representation, and various sized arrays for the atom
+    labels and masses. Also contains the potential and force between
+    neighbouring replicas.
 
-   Depend objects:
-      names: An array giving the atom names.
-      m: An array giving the atom masses.
-      m3: An array giving the mass associated with each degree of freedom.
-      sm3: An array giving the square root of m3.
-      q: An array giving all the bead positions.
-      p: An array giving all the bead momenta.
-      qc: An array giving the centroid positions. Depends on qnm.
-      pc: An array giving the centroid momenta. Depends on pnm.
-      vpath: The spring potential between the beads, divided by omegan**2.
-         Depends on q.
-      fpath: The spring force between the beads, divided by omegan**2.
-         Depends on q.
-      kins: A list of the kinetic energy of each replica.
-      kin: The total kinetic energy of the system. Note that this is not the
-         same as the estimate of the kinetic energy of the system, which is
-         contained in the properties module.
-      kstress: The total kinetic stress tensor for the system.
-      rg: An array giving the radius of gyration of each atom.
-   """
+    Attributes:
+       natoms: The number of atoms.
+       nbeads: The number of beads.
+       _blist: A list of Atoms objects for each replica of the system. Each
+          replica is assumed to have the same mass and atom label.
+       centroid: An atoms object giving the centroid coordinate of the beads.
 
-   def __init__(self, natoms, nbeads):
-      """Initialises Beads.
+    Depend objects:
+       names: An array giving the atom names.
+       m: An array giving the atom masses.
+       m3: An array giving the mass associated with each degree of freedom.
+       sm3: An array giving the square root of m3.
+       q: An array giving all the bead positions.
+       p: An array giving all the bead momenta.
+       qc: An array giving the centroid positions. Depends on qnm.
+       pc: An array giving the centroid momenta. Depends on pnm.
+       vpath: The spring potential between the beads, divided by omegan**2.
+          Depends on q.
+       fpath: The spring force between the beads, divided by omegan**2.
+          Depends on q.
+       kins: A list of the kinetic energy of each replica.
+       kin: The total kinetic energy of the system. Note that this is not the
+          same as the estimate of the kinetic energy of the system, which is
+          contained in the properties module.
+       kstress: The total kinetic stress tensor for the system.
+       rg: An array giving the radius of gyration of each atom.
+    """
 
-      Args:
-         natoms: Number of atoms.
-         nbeads: Number of beads.
-      """
+    def __init__(self, natoms, nbeads):
+        """Initialises Beads.
 
-      self.resize(natoms, nbeads)
+        Args:
+           natoms: Number of atoms.
+           nbeads: Number of beads.
+        """
 
-   def resize(self, natoms, nbeads):
-      """Creates all the data arrays needed in the simulation.
+        self.resize(natoms, nbeads)
 
-      Effectively initializes the whole Beads object, according to the
-      specified number of atoms and beads. Is also used, as the name suggests,
-      to resize the data to a new number of beads when this is necessary, for
-      example in initialization from a simulation with a different number of
-      beads.
+    def resize(self, natoms, nbeads):
+        """Creates all the data arrays needed in the simulation.
 
-      Also creates, or recreates, the dependency network, as this requires
-      the data arrays to be created for it to work.
+        Effectively initializes the whole Beads object, according to the
+        specified number of atoms and beads. Is also used, as the name suggests,
+        to resize the data to a new number of beads when this is necessary, for
+        example in initialization from a simulation with a different number of
+        beads.
 
-      Args:
-         natoms: The number of atoms.
-         nbeads: The number of beads.
-      """
+        Also creates, or recreates, the dependency network, as this requires
+        the data arrays to be created for it to work.
 
-      self.natoms = natoms
-      self.nbeads = nbeads
+        Args:
+           natoms: The number of atoms.
+           nbeads: The number of beads.
+        """
 
-      dself = dd(self)
-      
-      dself.names = depend_array(name="names", value=np.zeros(natoms, np.dtype('|S6')))
+        self.natoms = natoms
+        self.nbeads = nbeads
 
-      # atom masses, and mass-related arrays
-      dself.m = depend_array(name="m", value=np.zeros(natoms, float))   # this is the prototype mass array (just one independent of bead n)
-      dself.m3 = depend_array(name="m3", value=np.zeros((nbeads,3*natoms), float),    # this is m conveniently replicated to be (nb,3*nat)
-            func=self.mtom3, dependencies=[dself.m]) 
-      dself.sm3 = depend_array(name="sm3", value=np.zeros((nbeads,3*natoms), float),   # this is just the square root of m3
-            func=self.m3tosm3, dependencies=[dself.m3])
+        dself = dd(self)
 
-      # positions and momenta. bead representation, base storage used everywhere
-      dself.q = depend_array(name="q", value=np.zeros((nbeads,3*natoms), float))
-      dself.p = depend_array(name="p", value=np.zeros((nbeads,3*natoms), float))
+        dself.names = depend_array(name="names", value=np.zeros(natoms, np.dtype('|S6')))
 
-      # position and momentum of the centroid
-      dself.qc = depend_array(name="qc", value=np.zeros(3*natoms, float),
-            func=self.get_qc, dependencies=[dself.q])
-      dself.pc = depend_array(name="pc", value=np.zeros(3*natoms, float),
-            func=self.get_pc, dependencies=[dself.p])
-      
-      # path springs potential and force
-      dself.vpath = depend_value(name="vpath", func=self.get_vpath,
-            dependencies=[dself.q,dself.m3])
-      dself.fpath = depend_array(name="fpath", value=np.zeros((nbeads,3*natoms), float),
-            func=self.get_fpath, dependencies=[dself.q])
+        # atom masses, and mass-related arrays
+        dself.m = depend_array(name="m", value=np.zeros(natoms, float))   # this is the prototype mass array (just one independent of bead n)
+        dself.m3 = depend_array(name="m3", value=np.zeros((nbeads, 3 * natoms), float),    # this is m conveniently replicated to be (nb,3*nat)
+                                func=self.mtom3, dependencies=[dself.m])
+        dself.sm3 = depend_array(name="sm3", value=np.zeros((nbeads, 3 * natoms), float),   # this is just the square root of m3
+                                 func=self.m3tosm3, dependencies=[dself.m3])
 
-      # create proxies to access the individual beads as Atoms objects
-      # TODO: ACTUALLY THIS IS ONLY USED HERE METHINK, SO PERHAPS WE COULD REMOVE IT TO DECLUTTER THE CODE.
-      self._blist = [Atoms(natoms, _prebind=( self.q[i,:], self.p[i,:], self.m,  self.names )) for i in range(nbeads) ]      
-            
-      # kinetic energies of thhe beads, and total (classical) kinetic stress tensor
-      dself.kins = depend_array(name="kins", value=np.zeros(nbeads, float),
-            func=self.kin_gather,
-               dependencies=[dd(b).kin for b in self._blist])
-      dself.kin = depend_value(name="kin", func=self.get_kin,
-            dependencies=[dself.kins])
-      dself.kstress = depend_array(name="kstress",value=np.zeros((3,3), float),
-            func=self.get_kstress,
-               dependencies=[dd(b).kstress for b in self._blist])
+        # positions and momenta. bead representation, base storage used everywhere
+        dself.q = depend_array(name="q", value=np.zeros((nbeads, 3 * natoms), float))
+        dself.p = depend_array(name="p", value=np.zeros((nbeads, 3 * natoms), float))
 
-   def copy(self, nbeads = -1):
-      """Creates a new beads object with newP <= P beads from the original.
+        # position and momentum of the centroid
+        dself.qc = depend_array(name="qc", value=np.zeros(3 * natoms, float),
+                                func=self.get_qc, dependencies=[dself.q])
+        dself.pc = depend_array(name="pc", value=np.zeros(3 * natoms, float),
+                                func=self.get_pc, dependencies=[dself.p])
 
-      Returns:
-         A Beads object with the first newP q, p, m and names arrays as the original.
-      """
+        # path springs potential and force
+        dself.vpath = depend_value(name="vpath", func=self.get_vpath,
+                                   dependencies=[dself.q, dself.m3])
+        dself.fpath = depend_array(name="fpath", value=np.zeros((nbeads, 3 * natoms), float),
+                                   func=self.get_fpath, dependencies=[dself.q])
 
-      if nbeads  > self.nbeads:
-         raise ValueError("Cannot copy to an object with larger number of beads")
-      elif nbeads == -1:
-         nbeads = self.nbeads
+        # create proxies to access the individual beads as Atoms objects
+        # TODO: ACTUALLY THIS IS ONLY USED HERE METHINK, SO PERHAPS WE COULD REMOVE IT TO DECLUTTER THE CODE.
+        self._blist = [Atoms(natoms, _prebind=(self.q[i, :], self.p[i, :], self.m, self.names)) for i in range(nbeads)]
 
-      newbd = Beads(self.natoms, nbeads)
-      newbd.q[:] = self.q[:nbeads]
-      newbd.p[:] = self.p[:nbeads]
-      newbd.m[:] = self.m
-      newbd.names[:] = self.names
-      return newbd
+        # kinetic energies of thhe beads, and total (classical) kinetic stress tensor
+        dself.kins = depend_array(name="kins", value=np.zeros(nbeads, float),
+                                  func=self.kin_gather,
+                                  dependencies=[dd(b).kin for b in self._blist])
+        dself.kin = depend_value(name="kin", func=self.get_kin,
+                                 dependencies=[dself.kins])
+        dself.kstress = depend_array(name="kstress", value=np.zeros((3, 3), float),
+                                     func=self.get_kstress,
+                                     dependencies=[dd(b).kstress for b in self._blist])
 
-   def m3tosm3(self):
-      """Takes the mass array and returns the square rooted mass array."""
+    def copy(self, nbeads=-1):
+        """Creates a new beads object with newP <= P beads from the original.
 
-      return np.sqrt(depstrip(self.m3))
+        Returns:
+           A Beads object with the first newP q, p, m and names arrays as the original.
+        """
 
-   def mtom3(self):
-      """Takes the mass array for each bead and returns one with an element
-      for each degree of freedom.
+        if nbeads > self.nbeads:
+            raise ValueError("Cannot copy to an object with larger number of beads")
+        elif nbeads == -1:
+            nbeads = self.nbeads
 
-      Returns:
-         An array of size (nbeads,3*natoms), with each element corresponding
-         to the mass associated with the appropriate degree of freedom in q.
-      """
+        newbd = Beads(self.natoms, nbeads)
+        newbd.q[:] = self.q[:nbeads]
+        newbd.p[:] = self.p[:nbeads]
+        newbd.m[:] = self.m
+        newbd.names[:] = self.names
+        return newbd
 
-      m3 = np.zeros((self.nbeads,3*self.natoms),float)
-      m3[:,0:3*self.natoms:3] = self.m
-      m3[:,1:3*self.natoms:3] = m3[:,0:3*self.natoms:3]
-      m3[:,2:3*self.natoms:3] = m3[:,0:3*self.natoms:3]
-      return m3
+    def m3tosm3(self):
+        """Takes the mass array and returns the square rooted mass array."""
 
-   def get_qc(self):
-      """Gets the centroid coordinates."""
+        return np.sqrt(dstrip(self.m3))
 
-      return np.dot(np.ones(self.nbeads,float),depstrip(self.q))/float(self.nbeads)
+    def mtom3(self):
+        """Takes the mass array for each bead and returns one with an element
+        for each degree of freedom.
 
-   def get_pc(self):
-      """Gets the centroid momenta."""
+        Returns:
+           An array of size (nbeads,3*natoms), with each element corresponding
+           to the mass associated with the appropriate degree of freedom in q.
+        """
 
-      return np.dot(np.ones(self.nbeads,float),depstrip(self.p))/float(self.nbeads)
+        m3 = np.zeros((self.nbeads, 3 * self.natoms), float)
+        m3[:, 0:3 * self.natoms:3] = self.m
+        m3[:, 1:3 * self.natoms:3] = m3[:, 0:3 * self.natoms:3]
+        m3[:, 2:3 * self.natoms:3] = m3[:, 0:3 * self.natoms:3]
+        return m3
 
-   def kin_gather(self):
-      """Gets the kinetic energy for all the replicas.
+    def get_qc(self):
+        """Gets the centroid coordinates."""
 
-      Returns:
-         A list of the kinetic energy for each system.
-      """
+        return np.dot(np.ones(self.nbeads, float), dstrip(self.q)) / float(self.nbeads)
 
-      return np.array([b.kin for b in self._blist])
+    def get_pc(self):
+        """Gets the centroid momenta."""
 
-   def get_kin(self):
-      """Gets the total kinetic energy of all the replicas.
+        return np.dot(np.ones(self.nbeads, float), dstrip(self.p)) / float(self.nbeads)
 
-      Note that this does not correspond to the total kinetic energy estimate
-      for the system.
+    def kin_gather(self):
+        """Gets the kinetic energy for all the replicas.
 
-      Returns:
-         The sum of the kinetic energy of each replica.
-      """
+        Returns:
+           A list of the kinetic energy for each system.
+        """
 
-      return self.kins.sum()
+        return np.array([b.kin for b in self._blist])
 
-   def get_kstress(self):
-      """Calculates the total kinetic stress tensor of all the replicas.
+    def get_kin(self):
+        """Gets the total kinetic energy of all the replicas.
 
-      Note that this does not correspond to the quantum kinetic stress tensor
-      estimate for the system.
+        Note that this does not correspond to the total kinetic energy estimate
+        for the system.
 
-      Returns:
-         The sum of the kinetic stress tensor of each replica.
-      """
+        Returns:
+           The sum of the kinetic energy of each replica.
+        """
 
-      ks = np.zeros((3,3),float)
-      for b in range(self.nbeads):
-         ks += self[b].kstress
-      return ks
+        return self.kins.sum()
 
-   def get_vpath(self):
-      """Calculates the spring potential between the replicas.
+    def get_kstress(self):
+        """Calculates the total kinetic stress tensor of all the replicas.
 
-      Note that this is actually the harmonic potential without being
-      multiplied by the factor omegan**2, which is only available in the
-      ensemble as the temperature is required to calculate it.
-      """
+        Note that this does not correspond to the quantum kinetic stress tensor
+        estimate for the system.
 
-      epath = 0.0
-      q = depstrip(self.q)
-      m = depstrip(self.m3)[0]
-      for b in range(self.nbeads):
-         if b > 0:
-            dq = q[b,:] - q[b-1,:]
-         else:
-            dq = q[b,:] - q[self.nbeads-1,:]
-         epath += np.dot(dq, m*dq)
-         
-      print "WARNING: RETURNS AN INCORRECT RESULT IF OPEN PATHS ARE BEING USED. CALL NM.VSPRING INSTEAD!!"
-      return epath*0.5
+        Returns:
+           The sum of the kinetic stress tensor of each replica.
+        """
 
-   def get_fpath(self):
-      """Calculates the spring force between the replicas.
+        ks = np.zeros((3, 3), float)
+        for b in range(self.nbeads):
+            ks += self[b].kstress
+        return ks
 
-      Note that this is actually the harmonic force without being
-      multiplied by the factor omegan**2, which is only available in the
-      ensemble as the temperature is required to calculate it.
-      """
+    def get_vpath(self):
+        """Calculates the spring potential between the replicas.
 
-      nbeads = self.nbeads
-      natoms = self.natoms
-      f = np.zeros((nbeads,3*natoms),float)
+        Note that this is actually the harmonic potential without being
+        multiplied by the factor omegan**2, which is only available in the
+        ensemble as the temperature is required to calculate it.
+        """
 
-      q = depstrip(self.q)
-      m = depstrip(self.m3)[0]
-      for b in range(nbeads):
-         if b > 0:
-            dq = q[b,:] - q[b-1,:]
-         else:
-            dq = q[b,:] - q[self.nbeads-1,:]
-         dq *= m
-         f[b] -= dq
-         if b > 0:
-            f[b-1] += dq
-         else:
-            f[nbeads-1] += dq
-      return f
+        epath = 0.0
+        q = dstrip(self.q)
+        m = dstrip(self.m3)[0]
+        for b in range(self.nbeads):
+            if b > 0:
+                dq = q[b, :] - q[b - 1, :]
+            else:
+                dq = q[b, :] - q[self.nbeads - 1, :]
+            epath += np.dot(dq, m * dq)
+        print "WARNING: RETURNS AN INCORRECT RESULT IF OPEN PATHS ARE BEING USED. CALL NM.VSPRING INSTEAD!!"
+        return epath * 0.5
 
-   # A set of functions to access individual beads as Atoms objects
-   def __len__(self):
-      """Length function.
+    def get_fpath(self):
+        """Calculates the spring force between the replicas.
 
-      This is called whenever the standard function len(beads) is used.
+        Note that this is actually the harmonic force without being
+        multiplied by the factor omegan**2, which is only available in the
+        ensemble as the temperature is required to calculate it.
+        """
 
-      Returns:
-         The number of beads.
-      """
+        nbeads = self.nbeads
+        natoms = self.natoms
+        f = np.zeros((nbeads, 3 * natoms), float)
 
-      return self.nbeads
+        q = dstrip(self.q)
+        m = dstrip(self.m3)[0]
+        for b in range(nbeads):
+            if b > 0:
+                dq = q[b, :] - q[b - 1, :]
+            else:
+                dq = q[b, :] - q[self.nbeads - 1, :]
+            dq *= m
+            f[b] -= dq
+            if b > 0:
+                f[b - 1] += dq
+            else:
+                f[nbeads - 1] += dq
+        return f
 
-   def __getitem__(self,index):
-      """Overwrites standard getting function.
+    # A set of functions to access individual beads as Atoms objects
+    def __len__(self):
+        """Length function.
 
-      This is called whenever the standard function beads[index] is used.
-      Returns an Atoms object with the appropriate position and momenta arrays.
+        This is called whenever the standard function len(beads) is used.
 
-      Args:
-         index: The index of the replica of the system to be accessed.
+        Returns:
+           The number of beads.
+        """
 
-      Returns:
-         The replica of the system given by the index.
-      """
+        return self.nbeads
 
-      return self._blist[index]
+    def __getitem__(self, index):
+        """Overwrites standard getting function.
 
-   def __setitem__(self,index,value):
-      """Overwrites standard setting function.
+        This is called whenever the standard function beads[index] is used.
+        Returns an Atoms object with the appropriate position and momenta arrays.
 
-      This is called whenever the standard function beads[index]=value is used.
-      Changes the position and momenta of the appropriate slice of the global
-      position and momentum arrays to those given by value.
+        Args:
+           index: The index of the replica of the system to be accessed.
 
-      Args:
-         index: The replica of the system to be changed.
-         value: The Atoms object that holds the new values.
-      """
+        Returns:
+           The replica of the system given by the index.
+        """
 
-      self._blist[index].p[:] = value.p
-      self._blist[index].q[:] = value.q
-      self._blist[index].m[:] = value.m
-      self._blist[index].names[:] = value.names
+        return self._blist[index]
+
+    def __setitem__(self, index, value):
+        """Overwrites standard setting function.
+
+        This is called whenever the standard function beads[index]=value is used.
+        Changes the position and momenta of the appropriate slice of the global
+        position and momentum arrays to those given by value.
+
+        Args:
+           index: The replica of the system to be changed.
+           value: The Atoms object that holds the new values.
+        """
+
+        self._blist[index].p[:] = value.p
+        self._blist[index].q[:] = value.q
+        self._blist[index].m[:] = value.m
+        self._blist[index].names[:] = value.names

@@ -19,21 +19,16 @@ __all__ = ['InputBaro']
 
 
 class InputBaro(Input):
-   """Barostat input class.
 
-   Handles generating the appropriate barostat class from the xml input file,
-   and generating the xml checkpoint tags and data from an
-   instance of the object.
+    """Barostat input class.
 
-   Attributes:
-      mode: An optional string giving the type of barostat used. Defaults to
-         'rigid'.
+    Handles generating the appropriate barostat class from the xml input file,
+    and generating the xml checkpoint tags and data from an
+    instance of the object.
 
-   Fields:
-      thermostat: A thermostat object giving the cell thermostat.
-      tau: The time constant associated with the dynamics of the piston.
-      p: The conjugate momentum to the volume degree of freedom.
-   """
+    Attributes:
+       mode: An optional string giving the type of barostat used. Defaults to
+          'rigid'.
 
    attribs={ "mode": (InputAttribute, {"dtype"    : str,
                                    "default" : "dummy",
@@ -58,15 +53,15 @@ class InputBaro(Input):
                                  "dimension" : "length" })
            }
 
-   default_help = "Simulates an external pressure bath."
-   default_label = "BAROSTAT"
+    default_help = "Simulates an external pressure bath."
+    default_label = "BAROSTAT"
 
-   def store(self, baro):
-      """Takes a barostat instance and stores a minimal representation of it.
+    def store(self, baro):
+        """Takes a barostat instance and stores a minimal representation of it.
 
-      Args:
-         baro: A barostat object.
-      """
+        Args:
+           baro: A barostat object.
+        """
 
       super(InputBaro,self).store(baro)
       self.thermostat.store(baro.thermostat)
@@ -86,14 +81,29 @@ class InputBaro(Input):
       else:
          raise TypeError("The type " + type(baro).__name__ + " is not a valid barostat type")
 
+    def fetch(self):
+        """Creates a barostat object.
 
-   def fetch(self):
-      """Creates a barostat object.
+        Returns:
+           A barostat object of the appropriate type and with the appropriate
+           thermostat given the attributes of the InputBaro object.
+        """
 
-      Returns:
-         A barostat object of the appropriate type and with the appropriate
-         thermostat given the attributes of the InputBaro object.
-      """
+        super(InputBaro, self).fetch()
+        if self.mode.fetch() == "isotropic":
+            baro = BaroBZP(thermostat=self.thermostat.fetch(), tau=self.tau.fetch())
+            if self.p._explicit: baro.p = self.p.fetch()
+        elif self.mode.fetch() == "anisotropic":
+            baro = BaroRGB(thermostat=self.thermostat.fetch(), tau=self.tau.fetch())
+            if self.p._explicit: baro.p = self.p.fetch()
+            if self.h0._explicit:
+                baro.h0 = self.h0.fetch()
+            else:
+                raise ValueError("Reference cell MUST be specified for an anisotropic barostat")
+        elif self.mode.fetch() == "dummy":
+            baro = Barostat(thermostat=self.thermostat.fetch(), tau=self.tau.fetch())
+        else:
+            raise ValueError(self.mode.fetch() + " is not a valid mode of barostat")
 
       super(InputBaro,self).fetch()
       if self.mode.fetch() == "isotropic":

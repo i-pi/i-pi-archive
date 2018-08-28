@@ -16,6 +16,7 @@ __all__ = ['InputDynamics']
 
 
 class InputDynamics(InputDictionary):
+
     """Dynamics input class.
 
     Handles generating the appropriate ensemble class from the xml input file,
@@ -35,29 +36,29 @@ class InputDynamics(InputDictionary):
     """
 
     attribs = {
-        "mode": (InputAttribute, {"dtype":   str,
+        "mode": (InputAttribute, {"dtype": str,
                                   "default": 'nve',
-                                  "help":    "The ensemble that will be sampled during the simulation. ",
+                                  "help": "The ensemble that will be sampled during the simulation. ",
                                   "options": ['nve', 'nvt', 'npt', 'nst', 'sc', 'scnpt']}),
-        "splitting": (InputAttribute, {"dtype":   str,
-                                  "default": 'obabo',
-                                  "help":    "The Louiville splitting used for sampling the target ensemble. ",
-                                  "options": ['obabo', 'baoab']})        
-              }
+        "splitting": (InputAttribute, {"dtype": str,
+                                       "default": 'obabo',
+                                       "help": "The Louiville splitting used for sampling the target ensemble. ",
+                                       "options": ['obabo', 'baoab']})
+    }
 
     fields = {
         "thermostat": (InputThermo, {"default": input_default(factory=ipi.engine.thermostats.Thermostat),
-                                     "help":    "The thermostat for the atoms, keeps the atom velocity distribution at the correct temperature."}),
+                                     "help": "The thermostat for the atoms, keeps the atom velocity distribution at the correct temperature."}),
         "barostat": (InputBaro, {"default": input_default(factory=ipi.engine.barostats.Barostat),
-                                 "help":    InputBaro.default_help}),
-        "timestep": (InputValue, {"dtype":     float,
-                                  "default":   1.0,
-                                  "help":      "The time step.",
+                                 "help": InputBaro.default_help}),
+        "timestep": (InputValue, {"dtype": float,
+                                  "default": 1.0,
+                                  "help": "The time step.",
                                   "dimension": "time"}),
-        "nmts" : (InputArray, {"dtype" : int,
-                               "default" : np.zeros(0,int),
-                               "help"    : "Number of iterations for each MTS level (including the outer loop, that should in most cases have just one iteration)."})
-             }
+        "nmts": (InputArray, {"dtype": int,
+                              "default": np.zeros(0, int),
+                              "help": "Number of iterations for each MTS level (including the outer loop, that should in most cases have just one iteration)."})
+    }
 
     dynamic = {}
 
@@ -78,15 +79,15 @@ class InputDynamics(InputDictionary):
         self.timestep.store(dyn.dt)
         self.thermostat.store(dyn.thermostat)
         self.barostat.store(dyn.barostat)
-        self.nmts.store(dyn.nmts) 
+        self.nmts.store(dyn.nmts)
         self.splitting.store(dyn.splitting)
 
     def fetch(self):
-        """Creates a dynamics object.
+        """Creates an ensemble object.
 
         Returns:
-            A dynamics object of the appropriate mode and with the appropriate
-            objects given the attributes of the InputDynamics object.
+            An ensemble object of the appropriate mode and with the appropriate
+            objects given the attributes of the InputEnsemble object.
         """
 
         rv = super(InputDynamics, self).fetch()

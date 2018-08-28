@@ -10,9 +10,9 @@
          <init_file mode="xyz">./h5o2+.xyz</init_file>
          <plumeddat> plumed/plumed.dat </plumeddat>
    </ffplumed>
-   <total_steps>400000</total_steps>
+   <total_steps>200</total_steps>
    <output prefix="data">
-      <trajectory stride="20" filename="pos" cell_units="angstrom">positions{angstrom}</trajectory>
+      <trajectory stride="40" filename="pos" cell_units="angstrom">positions{angstrom}</trajectory>
       <trajectory stride="20" filename="xc" format="xyz">x_centroid{angstrom}</trajectory>
       <properties stride="2"> [ step, time, conserved, temperature{kelvin}, kinetic_cv, 
             potential, kinetic_cv(H), kinetic_cv(O), ensemble_bias ] </properties>
@@ -33,7 +33,7 @@
       <ensemble>
          <temperature units="kelvin"> 300.0 </temperature>
          <bias>
-            <force forcefield="driver" nbeads="1"></force>
+            <force forcefield="plumed" nbeads="1"></force>
          </bias>
       </ensemble>
       <motion mode="dynamics">

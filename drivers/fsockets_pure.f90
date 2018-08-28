@@ -36,7 +36,7 @@
 
    IMPLICIT NONE
 
-   INTEGER,PARAMETER  :: AF_UNSPEC = 0, AF_UNIX = 1
+   INTEGER,PARAMETER  :: AF_INET = 0, AF_UNIX = 1
    INTEGER,PARAMETER  :: AI_PASSIVE = 1
    INTEGER,PARAMETER  :: SOCK_STREAM = 1
    INTEGER,PARAMETER  :: UNIX_PATH_MAX = 108
@@ -187,7 +187,7 @@
 
          ptr = memset(c_loc(hints), 0, SIZEOF(hints))
          hints%ai_socktype = SOCK_STREAM
-         hints%ai_family = AF_UNSPEC
+         hints%ai_family = AF_INET
          hints%ai_flags = AI_PASSIVE
 
          WRITE(service,'(I10)') port

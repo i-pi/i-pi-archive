@@ -66,8 +66,8 @@ if __name__ == '__main__':
                         help='sets level of verbosity. silent will not print '
                              'anything. low prints messages from this script '
                              'and no autopep8 output, '
-                             'medium prints only filenames '
-                             'on which script acted and '
+                             'medium prints filenames checked by pepper'
+                             'and informs of any unfixed problems, '
                              'high prints everything from autopep8 output')
     parser.add_argument('--check',
                         action='store_true',
@@ -79,8 +79,10 @@ if __name__ == '__main__':
     is_in_check_mode = args.check
 
     # General arguments for pep8
-    styles_to_be_corrected = ['E101', 'E11', 'E121', 'E122', 'E123', 'E124', 'E125', 'E126', 'E127', 'E128',
-                              'E20', 'E211', 'E22', 'E224', 'E226', 'E227', 'E228', 'E231', 'E241', 'E242', 'E251', 'E26', 'E265', 'E27',
+    styles_to_be_corrected = ['E101', 'E11', 'E121', 'E122', 'E123', 'E124', 'E125',
+                                      'E126', 'E127', 'E128',
+                              'E20', 'E211', 'E22', 'E224', 'E226', 'E227', 'E228', 'E231',
+                                     'E241', 'E242', 'E251', 'E26', 'E265', 'E27',
                               'E301', 'E302', 'E303', 'E304', 'E306',
                               'E401',
                               'E502',
@@ -134,6 +136,11 @@ if __name__ == '__main__':
             ['autopep8'] + autopep8_args,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT)
+        # Line buffer to save the last unfixed issue: autopep8 prints unfixed issues at
+        # consecutive iterations on a given file. This generates a lot of messages.
+        # We are only interested in the last message and print it if number of issues exceeds 0.
+        # This means that some unfixed issues are left in the processed file.
+        issue_line_buffer = ''
         while process.poll() is None:
             # We must strip, otherwise we get double newline
             line = process.stdout.readline().rstrip()
@@ -143,12 +150,17 @@ if __name__ == '__main__':
                 if verbosity == 'high':
                     print line
                 elif verbosity == 'medium':
-                    # We want to print only filenames that changed
                     if re.match('\[file:.*\]', line):
+                        # new file is processed. If something left unfixed, print message now
+                        if issue_line_buffer is not '':
+                            print issue_line_buffer
                         # Pattern: [file:filename]
                         filename_line = re.search(r'\[file:(\S+)\]', line)
                         # Print only filename
                         print filename_line.group(1)
+                    elif re.match('.*0 issue.*', line):
+                        # there are 0 issues left, clean the buffer
+                        issue_line_buffer = ''
                     elif re.match('.*[1-9] issue.*', line):
                         # number of issues is greater than 0
                         issue_line = line
@@ -164,8 +176,11 @@ if __name__ == '__main__':
                         issue_line = issue_line.replace(': set([', ' at lines: ')
                         issue_line = issue_line.replace('])', '')
                         issue_line = issue_line.replace('}', '')
-                        print issue_line
+                        issue_line_buffer = issue_line
                 # if verbosity is silent or low, do not print output from autopep8
-
+        if verbosity == 'medium':
+            # end of processing. If something left unfixed, print the message now
+            if issue_line_buffer is not '':
+                print issue_line_buffer
     if verbosity != 'silent':
         print 'autopep8 terminated'

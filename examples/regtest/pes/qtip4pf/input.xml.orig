@@ -9,7 +9,7 @@ ENDREGTEST -->
 =======
   <output prefix='simulation'>
     <properties stride='20' filename='out'>  [ step, time{picosecond}, 
->>>>>>> c29b510319d7991070e13da5eb09ebe4099f1b43
+>>>>>>> 11482f45729765e964fae03aff964c7bfcc9588e
 conserved{electronvolt}, temperature{kelvin}, kinetic_cv{electronvolt}, potential{electronvolt}, pressure_cv{megapascal}] </properties>
     <trajectory filename='pos' stride='4'> positions{angstrom} </trajectory>
     <trajectory filename='for' stride='4'> forces{piconewton} </trajectory>
