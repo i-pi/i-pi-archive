@@ -915,7 +915,7 @@ def compare_files(file1, file2):
             try:
                 float_in_file1 = float(word_in_file1)
                 float_in_file2 = float(word_in_file2)
-                if not np.isclose(float_in_file1, float_in_file2, rtol=precision):
+                if not np.isclose(float_in_file1, float_in_file2, rtol=1e-4):
                     differences.append((line_count, word_count))
             except ValueError:
                 if not word_in_file1 == word_in_file2:
