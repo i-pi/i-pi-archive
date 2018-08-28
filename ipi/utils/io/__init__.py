@@ -21,7 +21,6 @@ from ipi.utils.decorators import cached
 
 __all__ = ["io_units", "iter_file", "print_file_path", "print_file", "read_file"]
 
-
 mode_map = {
     "bin": "binary",
 }
@@ -155,7 +154,6 @@ def print_file(mode, atoms, cell, filedesc=sys.stdout, title="", key="", dimensi
 
     cell_conv = unit_to_user("length", cell_units, 1.0)
     atoms_conv = unit_to_user(dimension, units, 1.0)
-
 
     title = title + ("%s{%s}  cell{%s}" % (key, units, cell_units))
     print_file_raw(mode=mode, atoms=atoms, cell=cell, filedesc=filedesc, title=title, cell_conv=cell_conv, atoms_conv=atoms_conv)

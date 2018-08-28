@@ -39,10 +39,10 @@ from ipi.utils.nmtransform import nm_rescale
 from ipi.utils.units import unit_to_internal
 
 # INPUT
-parser = argparse.ArgumentParser( description="""Script for interpolate hessian and/or instanton geometry""")
-parser.add_argument('-m', '--manual', action="store_true",default=False, help="Boolean which decides between a checkpoint file or a manual entry.")
+parser = argparse.ArgumentParser(description="""Script for interpolate hessian and/or instanton geometry""")
+parser.add_argument('-m', '--manual', action="store_true", default=False, help="Boolean which decides between a checkpoint file or a manual entry.")
 parser.add_argument('-chk', '--checkpoint', type=str, default='None', help="Name of the instanton checkpoint file.")
-parser.add_argument('-xyz', '--xyz',        type=str, default='None', help="Name of the instanton geometry file.")
+parser.add_argument('-xyz', '--xyz', type=str, default='None', help="Name of the instanton geometry file.")
 parser.add_argument('-hess', '--hessian', type=str, default='None', help="Name of the hessian file.")
 parser.add_argument('-n', '--nbeadsNew', required=True, default=0, help='New number of beads (half polymer)', type=int)
 
@@ -54,18 +54,18 @@ nbeadsNew = args.nbeadsNew
 manual = args.manual
 
 if not manual:
-   if chk=='None':
-       print 'Manual mode not specified and checkpoint file name not provided'
-       sys.exit()
+    if chk == 'None':
+        print 'Manual mode not specified and checkpoint file name not provided'
+        sys.exit()
 else:
-   if input_geo=='None':
-       print 'Manual mode  specified and geometry file name not provided'
-       sys.exit()
+    if input_geo == 'None':
+        print 'Manual mode  specified and geometry file name not provided'
+        sys.exit()
 
 # OPEN AND READ   ###########################################################3
 
 
-if input_geo != 'None' or chk !='None':
+if input_geo != 'None' or chk != 'None':
     if manual:
         if (os.path.exists(input_geo)):
             ipos = open(input_geo, "r")
@@ -86,7 +86,7 @@ if input_geo != 'None' or chk !='None':
         ipos.close()
 
         natoms = pos[0].natoms
-        atom   = pos[0]
+        atom = pos[0]
         # Compose the half ring polymer.
         q = np.vstack([i.q for i in pos])
     else:
@@ -96,25 +96,24 @@ if input_geo != 'None' or chk !='None':
         else:
             print "We can't find %s " % chk
             sys.exit()
-        cell    = simulation.syslist[0].cell
-        beads   = simulation.syslist[0].motion.beads.copy()
-        natoms  = simulation.syslist[0].motion.beads.natoms
-        nbeads  = beads.nbeads
-        q       = beads.q
-        atom    = beads._blist[0]
+        cell = simulation.syslist[0].cell
+        beads = simulation.syslist[0].motion.beads.copy()
+        natoms = simulation.syslist[0].motion.beads.natoms
+        nbeads = beads.nbeads
+        q = beads.q
+        atom = beads._blist[0]
 
     print ' '
     print 'We have a half ring polymer made of %i beads and %i atoms.' % (nbeads, natoms)
     print 'We will expand the ring polymer to get a half polymer of %i beads.' % nbeadsNew
 
-    
     # Compose the full ring polymer.
     #q2 = np.concatenate((q, np.flipud(q)), axis=0)
 
     # Make the rpc step
     #rpc = nm_rescale(2 * nbeads, 2 * nbeadsNew)
     #new_q = rpc.b1tob2(q2)[0:nbeadsNew]
-    rpc = nm_rescale(nbeads, nbeadsNew,np.asarray(range(natoms))) #We use open path RPC
+    rpc = nm_rescale(nbeads, nbeadsNew, np.asarray(range(natoms)))  # We use open path RPC
     new_q = rpc.b1tob2(q)
 
     # Print
@@ -128,10 +127,10 @@ if input_geo != 'None' or chk !='None':
     print 'The new Instanton geometry (half polymer) was generated'
     print 'Check NEW_INSTANTON.xyz'
     print ''
-    print 'Remeber to change the number of beads (%i) in your input' %nbeadsNew
+    print 'Remeber to change the number of beads (%i) in your input' % nbeadsNew
     print ''
 
-if input_hess != 'None' or chk !='None':
+if input_hess != 'None' or chk != 'None':
 
     if manual:
         if (os.path.exists(input_hess)):
@@ -154,7 +153,7 @@ if input_hess != 'None' or chk !='None':
         except:
             print "We don't have a hessian so there is nothing more to do"
             sys.exit()
-        if np.linalg.norm(h)<1e-13:
+        if np.linalg.norm(h) < 1e-13:
             print "We don't have a hessian so there is nothing more to do"
             sys.exit()
 
@@ -168,19 +167,19 @@ if input_hess != 'None' or chk !='None':
     size0 = natoms * 3
     #size1 = size0 * (2 * nbeads)
     #size2 = size0 * (2 * nbeadsNew)
-    size1 = size0 *  nbeads
-    size2 = size0 *  nbeadsNew
+    size1 = size0 * nbeads
+    size2 = size0 * nbeadsNew
 
     new_h = np.zeros([size0, size2])
-    rpc = nm_rescale(nbeads, nbeadsNew,np.asarray(range(1))) #We use open path RPC
+    rpc = nm_rescale(nbeads, nbeadsNew, np.asarray(range(1)))  # We use open path RPC
 
     for i in range(size0):
         for j in range(size0):
             h = np.array([])
             for n in range(nbeads):
                 h = np.append(h, hessian[i, j + size0 * n])
-            h3=np.concatenate((h,h,h),axis=0).reshape((h.size,3),order='F') #Open path expect three coordinates per atom
-            diag = rpc.b1tob2(h3)[:,0]
+            h3 = np.concatenate((h, h, h), axis=0).reshape((h.size, 3), order='F')  # Open path expect three coordinates per atom
+            diag = rpc.b1tob2(h3)[:, 0]
             new_h[i, j:size2:size0] += diag
 
     #new_h_half = new_h[:, 0:size2 / 2]
@@ -193,7 +192,7 @@ if input_hess != 'None' or chk !='None':
     print ''
     print 'Remeber to adapt/add the following line in your input:'
     print ''
-    print " <hessian mode='file' shape='(%i, %i)' >hessian.dat</hessian>"  % (3 * natoms, natoms * 3 * nbeadsNew)
+    print " <hessian mode='file' shape='(%i, %i)' >hessian.dat</hessian>" % (3 * natoms, natoms * 3 * nbeadsNew)
     print ''
 
 sys.exit()

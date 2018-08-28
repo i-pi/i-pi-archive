@@ -464,6 +464,18 @@ class Properties(dobject):
                       6 independent components in the form [xx, yy, zz, xy, xz, yz].""",
                           "func": (lambda: self.tensor2vec(self.forces.vir + self.kstress_cv()) / (self.cell.V * self.beads.nbeads))},
 
+            "pressure_tdsc": {"dimension": "pressure",
+                              "help": "The Suzuki-Chin thermodynamic estimator for pressure of the physical system.",
+                              "func": (lambda: np.trace(self.forces.vir + self.forces.virsc + self.kstress_sctd()) / (3.0 * self.cell.V * self.beads.nbeads))},
+
+            "vir_tdsc": {"dimension": "pressure",
+                         "help": "The Suzuki-Chin thermodynamic estimator for pressure of the physical system.",
+                         "func": (lambda: np.trace(self.forces.vir + self.forces.virsc) / (3.0 * self.cell.V * self.beads.nbeads))},
+
+            "kstress_tdsc": {"dimension": "pressure",
+                             "help": "The Suzuki-Chin thermodynamic estimator for pressure of the physical system.",
+                             "func": (lambda: np.trace(self.kstress_sctd()) / (3.0 * self.cell.V * self.beads.nbeads))},
+
             "pressure_cv": {"dimension": "pressure",
                             "help": "The quantum estimator for pressure of the physical system.",
                             "func": (lambda: np.trace(self.forces.vir + self.kstress_cv()) / (3.0 * self.cell.V * self.beads.nbeads))},
@@ -506,6 +518,19 @@ class Properties(dobject):
                        becomes too large.""",
                              'func': self.get_yama_estimators,
                              "size": 2},
+
+            "kcv_scaledcoords": {"dimension": "undefined",
+                                 "help": "The scaled coordinates estimators that can be used to compute energy and heat capacity",
+                                 "longhelp": """Returns the estimators that are required to evaluate the scaled-coordinates estimators
+                       for total energy and heat capacity, as described in T. M. Yamamoto,
+                       J. Chem. Phys., 104101, 123 (2005). Returns eps_v and eps_v', as defined in that paper.
+                       As the two estimators have a different dimensions, this can only be output in atomic units.
+                       Takes one argument, 'fd_delta', which gives the value of the finite difference parameter used -
+                       which defaults to """ + str(-self._DEFAULT_FINDIFF) + """. If the value of 'fd_delta' is negative,
+                       then its magnitude will be reduced automatically by the code if the finite difference error
+                       becomes too large.""",
+                                 'func': self.get_kcv_estimators,
+                                 "size": 2},
 
             "sc_scaledcoords": {"dimension": "undefined",
                                 "help": "The Suzuki-Chin scaled coordinates estimators that can be used to compute energy and heat capacity",
@@ -657,11 +682,11 @@ class Properties(dobject):
         self.dcell = system.cell.copy()
         self.dforces = system.forces.copy(self.dbeads, self.dcell)
         self.fqref = None
-        self._threadlock = system._propertylock # lock to avoid concurrent access and messing up with dbeads 
-        
+        self._threadlock = system._propertylock  # lock to avoid concurrent access and messing up with dbeads
+
         # self.properties_init()  # Initialize the properties here so that all
-        #+all variables are accessible (for example to set
-        #+the size of the hamiltonian_weights).
+        # +all variables are accessible (for example to set
+        # +the size of the hamiltonian_weights).
 
     def __getitem__(self, key):
         """Retrieves the item given by key.
@@ -815,21 +840,21 @@ class Properties(dobject):
         acv = np.dot(q.flatten(), f.flatten())
         acv *= -0.5 / self.beads.nbeads
         acv += ncount * 1.5 * Constants.kb * self.ensemble.temp
-        #~ acv = 0.0
-        #~ ncount = 0
-        #~
-        #~ for i in range(self.beads.natoms):
-        #~ if (atom != "" and iatom != i and latom != self.beads.names[i]):
-        #~ continue
-#~
-        #~ kcv = 0.0
-        #~ k = 3*i
-        #~ for b in range(self.beads.nbeads):
-        #~ kcv += q[b,k]* f[b,k] + q[b,k+1]* f[b,k+1] + q[b,k+2]* f[b,k+2]
-        #~ kcv *= -0.5/self.beads.nbeads
-        #~ kcv += 1.5*Constants.kb*self.ensemble.temp
-        #~ acv += kcv
-        #~ ncount += 1
+        # ~ acv = 0.0
+        # ~ ncount = 0
+        # ~
+        # ~ for i in range(self.beads.natoms):
+        # ~ if (atom != "" and iatom != i and latom != self.beads.names[i]):
+        # ~ continue
+# ~
+        # ~ kcv = 0.0
+        # ~ k = 3*i
+        # ~ for b in range(self.beads.nbeads):
+        # ~ kcv += q[b,k]* f[b,k] + q[b,k+1]* f[b,k+1] + q[b,k+2]* f[b,k+2]
+        # ~ kcv *= -0.5/self.beads.nbeads
+        # ~ kcv += 1.5*Constants.kb*self.ensemble.temp
+        # ~ acv += kcv
+        # ~ ncount += 1
 
         if ncount == 0:
             warning("Couldn't find an atom which matched the argument of kinetic energy, setting to zero.", verbosity.medium)
@@ -1245,6 +1270,36 @@ class Properties(dobject):
 
         return rg_tot / float(ncount)
 
+    def kstress_sctd(self):
+        """Calculates the quantum centroid virial kinetic stress tensor
+        estimator.
+
+        Note that this is not divided by the volume or the number of beads.
+
+        Returns:
+           A 3*3 tensor with all the components of the tensor.
+        """
+
+        kst = np.zeros((3, 3), float)
+        q = dstrip(self.beads.q)
+        qc = dstrip(self.beads.qc)
+        pc = dstrip(self.beads.pc)
+        m = dstrip(self.beads.m)
+        fall = dstrip(self.forces.f + self.forces.fsc)
+        na3 = 3 * self.beads.natoms
+
+        for b in range(self.beads.nbeads):
+            for i in range(3):
+                for j in range(i, 3):
+                    kst[i, j] -= np.dot(q[b, i:na3:3] - qc[i:na3:3],
+                                        fall[b, j:na3:3])
+
+        # return the CV estimator MULTIPLIED BY NBEADS -- again for consistency with the virial, kstress_MD, etc...
+        for i in range(3):
+            kst[i, i] += self.beads.nbeads * (np.dot(pc[i:na3:3], pc[i:na3:3] / m))
+
+        return kst
+
     def kstress_cv(self):
         """Calculates the quantum centroid virial kinetic stress tensor
         estimator.
@@ -1336,6 +1391,35 @@ class Properties(dobject):
 
         return nx_tot / float(ncount)
 
+    def get_kcv_estimators(self, fd_delta=- _DEFAULT_FINDIFF):
+        """Calculates the op beta derivative of the centroid virial kinetic energy estimator for the Suzuki-Chin propagator.
+
+        Args:
+           fd_delta: the relative finite difference in temperature to apply in
+           computing finite-difference quantities. If it is negative, will be
+           scaled down automatically to avoid discontinuities in the potential.
+        """
+
+        eps = abs(float(fd_delta))
+        beta = 1.0 / (Constants.kb * self.ensemble.temp)
+        beta2 = beta**2
+        qc = dstrip(self.beads.qc)
+        q = dstrip(self.beads.q)
+
+        self.dcell.h = self.cell.h
+        self.dbeads.q[::2] = self.beads.q[::2] + eps * (q - qc)[::2]
+
+        vir1 = np.dot(((q - qc)[::2]).flatten(), (self.forces.f[::2]).flatten()) / self.beads.nbeads * 2.0
+        vir2 = np.dot(((q - qc)[::2]).flatten(), ((self.dforces.f - self.forces.f)[::2]).flatten() / eps) / self.beads.nbeads * 2.0
+
+        eop = 1.5 * self.beads.natoms / beta - (0.50 * vir1) + np.mean(self.forces.pots[::2])
+
+        r3 = 1.5 * self.beads.natoms / beta2
+        r4 = 0.5 / beta * (vir1) * 1.50
+        r5 = 0.5 / beta * (vir2) * 0.50
+
+        return np.asarray([eop, r3 + r4 + r5])
+
     def get_yama_estimators(self, fd_delta=- _DEFAULT_FINDIFF):
         """Calculates the quantum scaled coordinate kinetic energy estimator.
 
@@ -1355,7 +1439,7 @@ class Properties(dobject):
 
         dbeta = abs(float(fd_delta))
         beta = 1.0 / (Constants.kb * self.ensemble.temp)
-
+        self.dcell.h = self.cell.h
         qc = dstrip(self.beads.qc)
         q = dstrip(self.beads.q)
         v0 = self.forces.pot / self.beads.nbeads
@@ -1415,6 +1499,7 @@ class Properties(dobject):
         beta = 1.0 / (Constants.kb * self.ensemble.temp)
         self.dforces.omegan2 = self.forces.omegan2
         self.dforces.alpha = self.forces.alpha
+        self.dcell.h = self.cell.h
 
         qc = dstrip(self.beads.qc)
         q = dstrip(self.beads.q)
@@ -2066,8 +2151,8 @@ class Trajectories(dobject):
     """
 
     def __init__(self):
-        """Initialises a Trajectories object."""        
-        
+        """Initialises a Trajectories object."""
+
         self.traj_dict = {
             # Note that here we want to return COPIES of the different arrays, so we make sure to make an operation in order not to return a reference.
             "positions": {"dimension": "length",
@@ -2149,6 +2234,11 @@ class Trajectories(dobject):
         self.dcell = system.cell.copy()
         self.dforces = self.system.forces.copy(self.dbeads, self.dcell)
         self._threadlock = system._propertylock
+
+        if system.beads.nbeads >= 2:
+            self.scdbeads = system.beads.copy(system.beads.nbeads / 2)
+            self.scdcell = system.cell.copy()
+            self.scdforces = self.system.forces.copy(self.scdbeads, self.scdcell)
 
     def get_akcv(self):
         """Calculates the contribution to the kinetic energy due to each degree

@@ -72,10 +72,10 @@ class GeopMotion(Motion):
            fixcom: An optional boolean which decides whether the centre of mass
               motion will be constrained or not. Defaults to False.
         """
-        if len(fixatoms)>0:
+        if len(fixatoms) > 0:
             raise ValueError("The optimization algorithm with fixatoms is not implemented. "
                              "We stop here. Comment this line and continue only if you know what you are doing")
- 
+
         super(GeopMotion, self).__init__(fixcom=fixcom, fixatoms=fixatoms)
 
         # Optimization Options
@@ -269,14 +269,13 @@ class DummyOptimizer(dobject):
         info(" @GEOP: Updating bead positions", verbosity.debug)
         self.qtime += time.time()
 
-
         if len(self.fixatoms) > 0:
-            ftmp=self.forces.f.copy() 
-            for dqb in ftmp: 
+            ftmp = self.forces.f.copy()
+            for dqb in ftmp:
                 dqb[self.fixatoms * 3] = 0.0
                 dqb[self.fixatoms * 3 + 1] = 0.0
                 dqb[self.fixatoms * 3 + 2] = 0.0
-            fmax = np.amax(np.absolute(ftmp)) 
+            fmax = np.amax(np.absolute(ftmp))
         else:
             fmax = np.amax(np.absolute(self.forces.f))
 
@@ -332,7 +331,7 @@ class BFGSOptimizer(DummyOptimizer):
             info(" @GEOP: Initializing BFGS", verbosity.debug)
             self.d += dstrip(self.forces.f) / np.sqrt(np.dot(self.forces.f.flatten(), self.forces.f.flatten()))
             if len(self.fixatoms) > 0:
-                for dqb in self.d: 
+                for dqb in self.d:
                     dqb[self.fixatoms * 3] = 0.0
                     dqb[self.fixatoms * 3 + 1] = 0.0
                     dqb[self.fixatoms * 3 + 2] = 0.0
@@ -342,7 +341,7 @@ class BFGSOptimizer(DummyOptimizer):
         self.old_f[:] = self.forces.f
 
         if len(self.fixatoms) > 0:
-            for dqb in self.old_f: 
+            for dqb in self.old_f:
                 dqb[self.fixatoms * 3] = 0.0
                 dqb[self.fixatoms * 3 + 1] = 0.0
                 dqb[self.fixatoms * 3 + 2] = 0.0
@@ -401,9 +400,8 @@ class BFGSTRMOptimizer(DummyOptimizer):
         self.old_u[:] = self.forces.pot
         self.old_f[:] = self.forces.f
 
-
         if len(self.fixatoms) > 0:
-            for dqb in self.old_f: 
+            for dqb in self.old_f:
                 dqb[self.fixatoms * 3] = 0.0
                 dqb[self.fixatoms * 3 + 1] = 0.0
                 dqb[self.fixatoms * 3 + 2] = 0.0
@@ -421,7 +419,7 @@ class BFGSTRMOptimizer(DummyOptimizer):
         d_x_max = np.amax(np.absolute(np.subtract(self.beads.q, self.old_x)))
         self.exitstep(self.forces.pot, self.old_u, d_x_max)
 
-#---------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------
 
 
 class LBFGSOptimizer(DummyOptimizer):
@@ -543,7 +541,7 @@ class SDOptimizer(DummyOptimizer):
         u0, du0 = (self.forces.pot.copy(), np.dot(dstrip(self.forces.f.flatten()), dq1_unit.flatten()))
 
         # Do one SD iteration; return positions and energy
-        #(x, fx,dfx) = min_brent(self.lm, fdf0=(u0, du0), x0=0.0,  #DELETE
+        # (x, fx,dfx) = min_brent(self.lm, fdf0=(u0, du0), x0=0.0,  #DELETE
         min_brent(self.lm, fdf0=(u0, du0), x0=0.0,
                   tol=self.ls_options["tolerance"] * self.tolerances["energy"],
                   itmax=self.ls_options["iter"], init_step=self.ls_options["step"])

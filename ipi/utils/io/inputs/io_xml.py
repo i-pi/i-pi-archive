@@ -137,7 +137,7 @@ class xml_handler(ContentHandler):
         # object
         self.buffer[self.level] = ''.join(self.buffer[self.level])
         self.open[self.level].fields.append(("_text", self.buffer[self.level]))
-        #'closes' the xml_node object, as we are no longer within its tags, so
+        # 'closes' the xml_node object, as we are no longer within its tags, so
         # there is no more data to be added to it.
         # Note that the xml_node is still held within the parent tag, so we
         # no longer require this xml node object.

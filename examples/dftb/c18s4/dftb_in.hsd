@@ -1,4 +1,5 @@
 Geometry = GenFormat {
+    <<< "c6.gen"
     <<< "init.gen"
 }
 

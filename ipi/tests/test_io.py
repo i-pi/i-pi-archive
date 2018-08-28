@@ -23,6 +23,7 @@ from ipi.utils.io import iter_file, read_file, print_file
 pos_xyz = np.array([i for i in range(3 * 3)])
 pos_pdb = unit_to_internal("length", "angstrom", pos_xyz)
 
+
 def test_read_xyz():
     """Tests that xyz files are read correctly."""
 
