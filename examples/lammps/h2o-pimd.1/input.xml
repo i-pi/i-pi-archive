@@ -22,7 +22,7 @@
     <motion mode='dynamics'>
       <dynamics mode='nvt'>
         <timestep units='femtosecond'> 0.5 </timestep>
-        <thermostat mode='langevin'>
+        <thermostat mode='svr'>
           <tau units='femtosecond'> 100 </tau>
         </thermostat>
       </dynamics>

@@ -383,7 +383,7 @@ class ThermoSVR(Thermostat):
     def get_et(self):
         """Calculates the damping term in the propagator."""
 
-        return np.exp(-0.5 * self.dt / self.tau)
+        return np.exp(-self.dt / self.tau)
 
     def get_K(self):
         """Calculates the average kinetic energy per degree of freedom."""
@@ -543,7 +543,7 @@ class ThermoGLE(Thermostat):
     def get_T(self):
         """Calculates the matrix for the overall drift of the velocities."""
 
-        return matrix_exp(-0.5 * self.dt * self.A)
+        return matrix_exp(-self.dt * self.A)
 
     def get_S(self):
         """Calculates the matrix for the coloured noise."""
