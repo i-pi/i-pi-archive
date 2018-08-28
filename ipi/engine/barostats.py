@@ -142,9 +142,9 @@ class Barostat(dobject):
                                                   dd(cell).V,
                                                   dd(forces).vir])
 
-        dself.pot = depend_value(name='pot', value = 0.0)
+        dself.pot = depend_value(name='pot', value=0.0)
 
-        dself.kin = depend_value(name='kin', value = 0.0)                                           
+        dself.kin = depend_value(name='kin', value=0.0)
 
         if bias != None:
             dself.kstress.add_dependency(dget(bias, "f"))
@@ -152,12 +152,12 @@ class Barostat(dobject):
 
         # Stress depend objects for Suzuki-Chin PIMD
         dself.kstress_sc = depend_value(name='kstress_sc', func=self.get_kstress_sc,
-                                        dependencies=[dd(beads).q, dd(beads).qc, 
-                                            dd(forces).fsc_part_2, dd(forces).f])
+                                        dependencies=[dd(beads).q, dd(beads).qc,
+                                                      dd(forces).fsc_part_2, dd(forces).f])
 
         dself.stress_sc = depend_value(name='stress_sc', func=self.get_stress_sc,
-                                       dependencies=[dself.kstress_sc, dd(self.cell).V, 
-                                           dd(forces).vir, dd(forces).virssc_part_2])
+                                       dependencies=[dself.kstress_sc, dd(self.cell).V,
+                                                     dd(forces).vir, dd(forces).virssc_part_2])
 
         if fixdof is None:
             self.mdof = float(self.beads.natoms) * 3.0
@@ -414,7 +414,6 @@ class BaroBZP(Barostat):
                                                  dd(self.cell).V, dself.temp,
                                                  dd(self.thermostat).ethermo])
 
-
     def get_pot(self):
         """Calculates the elastic strain energy of the cell."""
 
@@ -551,7 +550,6 @@ class BaroSCBZP(Barostat):
                                    dependencies=[dself.kin, dself.pot,
                                                  dd(self.cell).V, dself.temp,
                                                  dd(self.thermostat).ethermo])
-
 
     def get_pot(self):
         """Calculates the elastic strain energy of the cell."""

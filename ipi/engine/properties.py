@@ -682,11 +682,11 @@ class Properties(dobject):
         self.dcell = system.cell.copy()
         self.dforces = system.forces.copy(self.dbeads, self.dcell)
         self.fqref = None
-        self._threadlock = system._propertylock # lock to avoid concurrent access and messing up with dbeads 
-        
+        self._threadlock = system._propertylock  # lock to avoid concurrent access and messing up with dbeads
+
         # self.properties_init()  # Initialize the properties here so that all
-        #+all variables are accessible (for example to set
-        #+the size of the hamiltonian_weights).
+        # +all variables are accessible (for example to set
+        # +the size of the hamiltonian_weights).
 
     def __getitem__(self, key):
         """Retrieves the item given by key.
@@ -840,21 +840,21 @@ class Properties(dobject):
         acv = np.dot(q.flatten(), f.flatten())
         acv *= -0.5 / self.beads.nbeads
         acv += ncount * 1.5 * Constants.kb * self.ensemble.temp
-        #~ acv = 0.0
-        #~ ncount = 0
-        #~
-        #~ for i in range(self.beads.natoms):
-        #~ if (atom != "" and iatom != i and latom != self.beads.names[i]):
-        #~ continue
-#~
-        #~ kcv = 0.0
-        #~ k = 3*i
-        #~ for b in range(self.beads.nbeads):
-        #~ kcv += q[b,k]* f[b,k] + q[b,k+1]* f[b,k+1] + q[b,k+2]* f[b,k+2]
-        #~ kcv *= -0.5/self.beads.nbeads
-        #~ kcv += 1.5*Constants.kb*self.ensemble.temp
-        #~ acv += kcv
-        #~ ncount += 1
+        # ~ acv = 0.0
+        # ~ ncount = 0
+        # ~
+        # ~ for i in range(self.beads.natoms):
+        # ~ if (atom != "" and iatom != i and latom != self.beads.names[i]):
+        # ~ continue
+# ~
+        # ~ kcv = 0.0
+        # ~ k = 3*i
+        # ~ for b in range(self.beads.nbeads):
+        # ~ kcv += q[b,k]* f[b,k] + q[b,k+1]* f[b,k+1] + q[b,k+2]* f[b,k+2]
+        # ~ kcv *= -0.5/self.beads.nbeads
+        # ~ kcv += 1.5*Constants.kb*self.ensemble.temp
+        # ~ acv += kcv
+        # ~ ncount += 1
 
         if ncount == 0:
             warning("Couldn't find an atom which matched the argument of kinetic energy, setting to zero.", verbosity.medium)
@@ -2151,8 +2151,8 @@ class Trajectories(dobject):
     """
 
     def __init__(self):
-        """Initialises a Trajectories object."""        
-        
+        """Initialises a Trajectories object."""
+
         self.traj_dict = {
             # Note that here we want to return COPIES of the different arrays, so we make sure to make an operation in order not to return a reference.
             "positions": {"dimension": "length",

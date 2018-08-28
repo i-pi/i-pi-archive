@@ -96,8 +96,6 @@ class ForceBead(dobject):
             self.uid = fbuid
             fbuid += 1
 
-
-
         # stores a reference to the atoms and cell we are computing forces for
         self.atoms = atoms
         self.cell = cell
@@ -439,25 +437,25 @@ class ScaledForceComponent(dobject):
         dself = dd(self)
         dself.scaling = depend_value(name="scaling", value=scaling)
         dself.f = depend_array(name="f",
-                                     func=lambda: self.scaling * self.bf.f if scaling != 0 else np.zeros((self.bf.nbeads, 3 * self.bf.natoms)),
-                                     value=np.zeros((self.bf.nbeads, 3 * self.bf.natoms)),
-                                     dependencies=[dd(self.bf).f, dself.scaling])
+                               func=lambda: self.scaling * self.bf.f if scaling != 0 else np.zeros((self.bf.nbeads, 3 * self.bf.natoms)),
+                               value=np.zeros((self.bf.nbeads, 3 * self.bf.natoms)),
+                               dependencies=[dd(self.bf).f, dself.scaling])
         dself.pots = depend_array(name="pots",
-                                        func=lambda: self.scaling * self.bf.pots if scaling != 0 else np.zeros(self.bf.nbeads),
-                                        value=np.zeros(self.bf.nbeads),
-                                        dependencies=[dd(self.bf).pots, dself.scaling])
+                                  func=lambda: self.scaling * self.bf.pots if scaling != 0 else np.zeros(self.bf.nbeads),
+                                  value=np.zeros(self.bf.nbeads),
+                                  dependencies=[dd(self.bf).pots, dself.scaling])
         dself.virs = depend_array(name="virs", func=lambda: self.scaling * self.bf.virs,
-                                        value=np.zeros((self.bf.nbeads, 3, 3)),
-                                        dependencies=[dd(self.bf).virs, dself.scaling])
+                                  value=np.zeros((self.bf.nbeads, 3, 3)),
+                                  dependencies=[dd(self.bf).virs, dself.scaling])
         dself.extras = depend_array(name="extras", func=lambda: self.bf.extras,
-                                          value=np.zeros(self.bf.nbeads),
-                                          dependencies=[dd(self.bf).extras])
+                                    value=np.zeros(self.bf.nbeads),
+                                    dependencies=[dd(self.bf).extras])
 
         # total potential and total virial
         dself.pot = depend_value(name="pot", func=(lambda: self.pots.sum()),
-                          dependencies=[dself.pots])
+                                 dependencies=[dself.pots])
         dself.vir = depend_array(name="vir", func=self.get_vir, value=np.zeros((3, 3)),
-                          dependencies=[dself.virs])
+                                 dependencies=[dself.virs])
 
         # pipes weight from the force, since the scaling is applied on top of that
         self.weight = depend_value(name="weight", value=0)
@@ -644,7 +642,7 @@ class Forces(dobject):
                                    dependencies=[dself.potssc],
                                    func=(lambda: self.potssc.sum()))
 
-        # The coefficients of the physical and the |f|^2 terms 
+        # The coefficients of the physical and the |f|^2 terms
         dself.coeffsc_part_1 = depend_array(name="coeffsc_part_1", value=np.zeros((self.nbeads, 1), float),
                                             func=self.get_coeffsc_part_1)
 
@@ -653,13 +651,13 @@ class Forces(dobject):
 
         # A list that contains the high order component of the force and the virial
         dself.fvir_4th_order = depend_value(name="fvir_4th_order", value=[None, None],
-                                                  dependencies=[dd(self.beads).m, dself.f, dself.pots],
-                                                  func=self.fvir_4th_order_combine)
+                                            dependencies=[dd(self.beads).m, dself.f, dself.pots],
+                                            func=self.fvir_4th_order_combine)
 
         # The high order component of the Suzuki-Chin force.
-        dself.f_4th_order =  depend_array(name="f_4th_order", value=np.zeros((self.nbeads, 3 * self.natoms), float),
-                                               dependencies=[dself.fvir_4th_order],
-                                               func=(lambda: self.fvir_4th_order[0]))
+        dself.f_4th_order = depend_array(name="f_4th_order", value=np.zeros((self.nbeads, 3 * self.natoms), float),
+                                         dependencies=[dself.fvir_4th_order],
+                                         func=(lambda: self.fvir_4th_order[0]))
 
         dself.fsc_part_1 = depend_array(name="fsc_part_1", value=np.zeros((self.nbeads, 3 * self.natoms), float),
                                         dependencies=[dself.coeffsc_part_1, dself.f],
@@ -673,36 +671,34 @@ class Forces(dobject):
                                   dependencies=[dself.fsc_part_1, dself.fsc_part_2],
                                   func=self.get_fsc)
 
-
         # The high order component of the Suzuki-Chin virial.
         dself.virs_4th_order = depend_array(name="vir_4th_order", value=np.zeros((self.nbeads, 3, 3), float),
-                                                  dependencies=[dself.fvir_4th_order],
-                                                  func=(lambda: self.fvir_4th_order[1]))
+                                            dependencies=[dself.fvir_4th_order],
+                                            func=(lambda: self.fvir_4th_order[1]))
 
-        dself.virssc_part_1 =  depend_array(name="virssc_part_1", value=np.zeros((self.nbeads, 3, 3), float),
-                                                 dependencies=[dself.coeffsc_part_1, dself.virs],
-                                                 func=self.get_virssc_part_1)
+        dself.virssc_part_1 = depend_array(name="virssc_part_1", value=np.zeros((self.nbeads, 3, 3), float),
+                                           dependencies=[dself.coeffsc_part_1, dself.virs],
+                                           func=self.get_virssc_part_1)
 
         dself.virssc_part_2 = depend_array(name="virssc_part_2", value=np.zeros((self.nbeads, 3, 3), float),
-                                                 dependencies=[dself.coeffsc_part_2, dself.virs_4th_order],
-                                                 func=self.get_virssc_part_2)
+                                           dependencies=[dself.coeffsc_part_2, dself.virs_4th_order],
+                                           func=self.get_virssc_part_2)
 
         dself.virssc = depend_array(name="virssc", value=np.zeros((self.nbeads, 3, 3), float),
-                                          dependencies=[dself.virssc_part_1, dself.virssc_part_2],
-                                          func=self.get_virssc)
+                                    dependencies=[dself.virssc_part_1, dself.virssc_part_2],
+                                    func=self.get_virssc)
 
         dself.virsc = depend_value(name="potsc",
-                                               dependencies=[dself.potssc],
-                                               func=(lambda: np.sum(self.virssc, axis=0)))
+                                   dependencies=[dself.potssc],
+                                   func=(lambda: np.sum(self.virssc, axis=0)))
 
         # Add dependencies from the force weights, that are applied here when the total
         # force is assembled from its components
 
-#        for fc in self.mforces:
-#            dget(self, "f").add_dependency(dget(fc, "weight"))
-#            dget(self, "pots").add_dependency(dget(fc, "weight"))
-#            dget(self, "virs").add_dependency(dget(fc, "weight"))
-
+        for fc in self.mforces:
+            dself.f.add_dependency(dd(fc).weight)
+            dself.pots.add_dependency(dd(fc).weight)
+            dself.virs.add_dependency(dd(fc).weight)
 
     def copy(self, beads=None, cell=None):
         """ Returns a copy of this force object that can be used to compute forces,
