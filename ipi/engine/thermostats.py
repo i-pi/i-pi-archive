@@ -149,7 +149,7 @@ class ThermoLangevin(Thermostat):
     def get_T(self):
         """Calculates the coefficient of the overall drift of the velocities."""
 
-        return np.exp(-0.5 * self.dt / self.tau)
+        return np.exp(-self.dt / self.tau)
 
     def get_S(self):
         """Calculates the coefficient of the white noise."""
@@ -171,6 +171,7 @@ class ThermoLangevin(Thermostat):
         super(ThermoLangevin, self).__init__(temp, dt, ethermo)
         dself = dd(self)
 
+        dself.dt = depend_value(value=dt, name='dt')
         dself.tau = depend_value(value=tau, name='tau')
         dself.T = depend_value(name="T", func=self.get_T,
                                dependencies=[dself.tau, dself.dt])
