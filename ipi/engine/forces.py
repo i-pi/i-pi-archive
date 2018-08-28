@@ -484,8 +484,8 @@ class ScaledForceComponent(dobject):
 
 
 class Forces(dobject):
-    """Class that gathers all the forces together.
 
+    """Class that gathers all the forces together.
     Collects many forcefield instances and parallelizes getting the forces
     in a PIMD environment.
 
@@ -561,6 +561,8 @@ class Forces(dobject):
         self.mbeads = []
         self.mrpc = []
 
+        dself = dd(self)
+
         # a "function factory" to generate functions to automatically update
         # contracted paths
         def make_rpc(rpc, beads):
@@ -634,8 +636,9 @@ class Forces(dobject):
 
         # The Suzuki-Chin difference potential
         dself.potssc = depend_array(name="potssc", value=np.zeros(self.nbeads, float),
-                                          dependencies=[dget(self.beads, "m"), dget(self, "f"), dget(self, "pots"), dget(self, "alpha"), dget(self, "omegan2")],
-                                          func=self.get_potssc)
+                                    dependencies=[dd(self.beads).m, dself.f, dself.pots, dself.alpha,
+                                                  dself.omegan2],
+                                    func=self.get_potssc)
 
         dself.potsc = depend_value(name="potsc",
                                    dependencies=[dself.potssc],
@@ -643,19 +646,19 @@ class Forces(dobject):
 
         # The coefficients of the physical and the |f|^2 terms 
         dself.coeffsc_part_1 = depend_array(name="coeffsc_part_1", value=np.zeros((self.nbeads, 1), float),
-                                                  func=self.get_coeffsc_part_1)
+                                            func=self.get_coeffsc_part_1)
 
         dself.coeffsc_part_2 = depend_array(name="coeffsc_part_2", value=np.zeros((self.nbeads, 1), float),
-                                                  dependencies=[dget(self, "alpha"), dget(self, "omegan2")], func=self.get_coeffsc_part_2)
+                                            dependencies=[dself.alpha, dself.omegan2], func=self.get_coeffsc_part_2)
 
         # A list that contains the high order component of the force and the virial
         dself.fvir_4th_order = depend_value(name="fvir_4th_order", value=[None, None],
-                                                  dependencies=[dget(self.beads, "m"), dget(self, "f"), dget(self, "pots")],
+                                                  dependencies=[dd(self.beads).m, dself.f, dself.pots],
                                                   func=self.fvir_4th_order_combine)
 
         # The high order component of the Suzuki-Chin force.
         dself.f_4th_order =  depend_array(name="f_4th_order", value=np.zeros((self.nbeads, 3 * self.natoms), float),
-                                               dependencies=[dget(self, "fvir_4th_order")],
+                                               dependencies=[dself.fvir_4th_order],
                                                func=(lambda: self.fvir_4th_order[0]))
 
         dself.fsc_part_1 = depend_array(name="fsc_part_1", value=np.zeros((self.nbeads, 3 * self.natoms), float),
@@ -673,33 +676,33 @@ class Forces(dobject):
 
         # The high order component of the Suzuki-Chin virial.
         dself.virs_4th_order = depend_array(name="vir_4th_order", value=np.zeros((self.nbeads, 3, 3), float),
-                                                  dependencies=[dget(self, "fvir_4th_order")],
+                                                  dependencies=[dself.fvir_4th_order],
                                                   func=(lambda: self.fvir_4th_order[1]))
 
         dself.virssc_part_1 =  depend_array(name="virssc_part_1", value=np.zeros((self.nbeads, 3, 3), float),
-                                                 dependencies=[dget(self, "coeffsc_part_1"), dget(self, "virs")],
+                                                 dependencies=[dself.coeffsc_part_1, dself.virs],
                                                  func=self.get_virssc_part_1)
 
         dself.virssc_part_2 = depend_array(name="virssc_part_2", value=np.zeros((self.nbeads, 3, 3), float),
-                                                 dependencies=[dget(self, "coeffsc_part_2"), dget(self, "virs_4th_order")],
+                                                 dependencies=[dself.coeffsc_part_2, dself.virs_4th_order],
                                                  func=self.get_virssc_part_2)
 
         dself.virssc = depend_array(name="virssc", value=np.zeros((self.nbeads, 3, 3), float),
-                                          dependencies=[dget(self, "virssc_part_1"), dget(self, "virssc_part_2")],
+                                          dependencies=[dself.virssc_part_1, dself.virssc_part_2],
                                           func=self.get_virssc)
 
+        dself.virsc = depend_value(name="potsc",
+                                               dependencies=[dself.potssc],
+                                               func=(lambda: np.sum(self.virssc, axis=0)))
 
         # Add dependencies from the force weights, that are applied here when the total
         # force is assembled from its components
 
-        for fc in self.mforces:
-            dget(self, "f").add_dependency(dget(fc, "weight"))
-            dget(self, "pots").add_dependency(dget(fc, "weight"))
-            dget(self, "virs").add_dependency(dget(fc, "weight"))
+#        for fc in self.mforces:
+#            dget(self, "f").add_dependency(dget(fc, "weight"))
+#            dget(self, "pots").add_dependency(dget(fc, "weight"))
+#            dget(self, "virs").add_dependency(dget(fc, "weight"))
 
-        dset(self, "virsc", value=depend_value(name="potsc",
-                                               dependencies=[dget(self, "potssc")],
-                                               func=(lambda: np.sum(self.virssc, axis=0))))
 
     def copy(self, beads=None, cell=None):
         """ Returns a copy of this force object that can be used to compute forces,

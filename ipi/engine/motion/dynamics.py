@@ -306,8 +306,8 @@ class NVEIntegrator(DummyIntegrator):
 
             na3 = self.beads.natoms * 3
             nb = self.beads.nbeads
-            p = depstrip(self.beads.p)
-            m = depstrip(self.beads.m3)[:, 0:na3:3]
+            p = dstrip(self.beads.p)
+            m = dstrip(self.beads.m3)[:, 0:na3:3]
             M = self.beads[0].M
 
             for i in range(3):
@@ -322,7 +322,7 @@ class NVEIntegrator(DummyIntegrator):
 
         if len(self.fixatoms) > 0:
             for bp in self.beads.p:
-                m = depstrip(self.beads.m)
+                m = dstrip(self.beads.m)
                 self.ensemble.eens += 0.5 * np.dot(bp[self.fixatoms * 3], bp[self.fixatoms * 3] / m[self.fixatoms])
                 self.ensemble.eens += 0.5 * np.dot(bp[self.fixatoms * 3 + 1], bp[self.fixatoms * 3 + 1] / m[self.fixatoms])
                 self.ensemble.eens += 0.5 * np.dot(bp[self.fixatoms * 3 + 2], bp[self.fixatoms * 3 + 2] / m[self.fixatoms])
@@ -336,12 +336,12 @@ class NVEIntegrator(DummyIntegrator):
         # halfdt/alpha
         self.beads.p += self.forces.forces_mts(level) * self.pdt[level]
         if level == 0:  # adds bias in the outer loop
-            self.beads.p += depstrip(self.bias.f) * self.pdt[level]
+            self.beads.p += dstrip(self.bias.f) * self.pdt[level]
 
     def qcstep(self):
         """Velocity Verlet centroid position propagator."""
         # dt/inmts
-        self.nm.qnm[0, :] += depstrip(self.nm.pnm)[0, :] / depstrip(self.beads.m3)[0] * self.qdt
+        self.nm.qnm[0, :] += dstrip(self.nm.pnm)[0, :] / dstrip(self.beads.m3)[0] * self.qdt
 
     # now the idea is that for BAOAB the MTS should work as follows:
     # take the BAB MTS, and insert the O in the very middle. This might imply breaking a A step in two, e.g. one could have
@@ -557,7 +557,7 @@ class SCIntegrator(NVTIntegrator):
 
         if level == 0:
             # bias goes in the outer loop
-            self.beads.p += depstrip(self.bias.f) * self.pdt[level]
+            self.beads.p += dstrip(self.bias.f) * self.pdt[level]
         # just integrate the Trotter force scaled with the SC coefficients, which is a cheap approx to the SC force
         self.beads.p += self.forces.forces_mts(level) * (1.0 + self.forces.coeffsc_part_1) * self.pdt[level]
 
@@ -572,9 +572,9 @@ class SCIntegrator(NVTIntegrator):
             self.pconstraints()
 
             # forces are integerated for dt with MTS.
-            self.beads.p += depstrip(self.forces.fsc_part_2) * self.dt * 0.5
+            self.beads.p += dstrip(self.forces.fsc_part_2) * self.dt * 0.5
             self.mtsprop(0)
-            self.beads.p += depstrip(self.forces.fsc_part_2) * self.dt * 0.5
+            self.beads.p += dstrip(self.forces.fsc_part_2) * self.dt * 0.5
 
             # thermostat is applied for dt/2
             self.tstep()
@@ -582,13 +582,13 @@ class SCIntegrator(NVTIntegrator):
 
         elif self.splitting == "baoab":
 
-            self.beads.p += depstrip(self.forces.fsc_part_2) * self.dt * 0.5
+            self.beads.p += dstrip(self.forces.fsc_part_2) * self.dt * 0.5
             self.mtsprop_ba(0)
             # thermostat is applied for dt
             self.tstep()
             self.pconstraints()
             self.mtsprop_ab(0)
-            self.beads.p += depstrip(self.forces.fsc_part_2) * self.dt * 0.5
+            self.beads.p += dstrip(self.forces.fsc_part_2) * self.dt * 0.5
 
 
 class SCNPTIntegrator(SCIntegrator):
@@ -630,10 +630,10 @@ class SCNPTIntegrator(SCIntegrator):
 
             # forces are integerated for dt with MTS.
             self.barostat.pscstep()
-            self.beads.p += depstrip(self.forces.fsc_part_2) * self.dt * 0.5
+            self.beads.p += dstrip(self.forces.fsc_part_2) * self.dt * 0.5
             self.mtsprop(0)
             self.barostat.pscstep()
-            self.beads.p += depstrip(self.forces.fsc_part_2) * self.dt * 0.5
+            self.beads.p += dstrip(self.forces.fsc_part_2) * self.dt * 0.5
 
             # thermostat is applied for dt/2
             self.tstep()
@@ -642,11 +642,11 @@ class SCNPTIntegrator(SCIntegrator):
         elif self.splitting == "baoab":
 
             self.barostat.pscstep()
-            self.beads.p += depstrip(self.forces.fsc_part_2) * self.dt * 0.5
+            self.beads.p += dstrip(self.forces.fsc_part_2) * self.dt * 0.5
             self.mtsprop_ba(0)
             # thermostat is applied for dt
             self.tstep()
             self.pconstraints()
             self.mtsprop_ab(0)
             self.barostat.pscstep()
-            self.beads.p += depstrip(self.forces.fsc_part_2) * self.dt * 0.5
+            self.beads.p += dstrip(self.forces.fsc_part_2) * self.dt * 0.5
