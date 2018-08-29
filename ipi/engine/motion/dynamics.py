@@ -475,6 +475,7 @@ class NPTIntegrator(NVTIntegrator):
 
         self.barostat.pstep(level)
         super(NPTIntegrator, self).pstep(level)
+        self.pconstraints()
 
     def qcstep(self):
         """Velocity Verlet centroid position propagator."""
