@@ -525,8 +525,6 @@ class BaroRGB(Barostat):
 
         m = dstrip(self.beads.m)
 
-        saveq = self.nm.qnm[0].copy()
-        savep = self.nm.pnm[0].copy()
         for i in range(self.beads.natoms):
             self.nm.qnm[0, 3 * i:3 * (i + 1)] = np.dot(expq, self.nm.qnm[0, 3 * i:3 * (i + 1)])
             self.nm.qnm[0, 3 * i:3 * (i + 1)] += np.dot(np.dot(invert_ut3x3(v), (expq - expp) / (2.0)), dstrip(self.nm.pnm)[0, 3 * i:3 * (i + 1)] / m[i])
