@@ -29,7 +29,7 @@ ENDREGTEST -->
         <thermostat mode='langevin'>
           <tau units='femtosecond'> 100 </tau>
   	</thermostat>
-  	<nnmts> [4] </nmts>
+  	<nmts> [4] </nmts>
       </dynamics>
     </motion>
     <ensemble>
