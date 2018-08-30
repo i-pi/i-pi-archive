@@ -499,7 +499,7 @@ class BaroSCBZP(Barostat):
         super(BaroSCBZP, self).__init__(dt, temp, tau, ebaro, thermostat)
         dself = dd(self)
 
-        dset(self, "p", depend_array(name='p', value=np.atleast_1d(0.0)))
+        dself.p = depend_array(name='p', value=np.atleast_1d(0.0))
 
         if not p is None:
             self.p = np.asarray([p])
@@ -530,6 +530,7 @@ class BaroSCBZP(Barostat):
         """
 
         super(BaroSCBZP, self).bind(beads, nm, cell, forces, bias, prng, fixdof, nmts)
+        dself = dd(self)
 
         # obtain the thermostat mass from the given time constant
         dself.m = depend_array(name='m', value=np.atleast_1d(0.0),
