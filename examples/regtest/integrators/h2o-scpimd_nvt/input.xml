@@ -28,8 +28,8 @@ ENDREGTEST -->
         <timestep units='femtosecond'> 1.0 </timestep>
         <thermostat mode='langevin'>
           <tau units='femtosecond'> 100 </tau>
-  	</thermostat>
-  	<nnmts> [4] </nmts>
+        </thermostat>
+  	<nmts> [4] </nmts>
       </dynamics>
     </motion>
     <ensemble>
