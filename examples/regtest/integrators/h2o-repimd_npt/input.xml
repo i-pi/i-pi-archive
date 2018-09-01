@@ -34,7 +34,7 @@ ENDREGTEST -->
                  <dynamics mode="npt">
                     <barostat mode="isotropic">
                         <tau units="femtosecond"> 1189.3531 </tau>
-                        <thermostat mode="langevin">
+                        <thermostat mode="svr">
                             <tau units="femtosecond"> 100 </tau>
                         </thermostat>
                     </barostat>

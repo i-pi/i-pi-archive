@@ -29,12 +29,12 @@ ENDREGTEST -->
         <timestep units='femtosecond'> 0.5 </timestep>
         <barostat mode='isotropic'>
           <tau units='femtosecond'> 200</tau>
-          <thermostat mode='langevin'>
+          <thermostat mode='svr'>
             <tau units='femtosecond'> 100</tau>
           </thermostat>
           <h0> [ 35.233, 0, 0, 0, 35.233, 0, 0, 0, 35.233 ] </h0>
         </barostat>
-        <thermostat mode='langevin'>
+        <thermostat mode='svr'>
           <tau units='femtosecond'> 100 </tau>
         </thermostat>
       </dynamics>
