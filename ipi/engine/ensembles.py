@@ -164,7 +164,7 @@ class Ensemble(dobject):
             self.add_econs(e)
 
         dself.lpens = depend_value(name='lpens', func=self.get_lpens,
-                                         dependencies=[dself.temp])
+                                   dependencies=[dself.temp])
         dself.lpens.add_dependency(dd(self.nm).kin)
         dself.lpens.add_dependency(dd(self.forces).pot)
         dself.lpens.add_dependency(dd(self.bias).pot)

@@ -206,6 +206,7 @@ class InputFFLennardJones(InputForceField):
         if self.timeout.fetch() < 0.0:
             raise ValueError("Negative timeout parameter specified.")
 
+
 class InputFFDebye(InputForceField):
 
     fields = {

@@ -851,7 +851,7 @@ def get_output_filenames(xml_path):
             for _ss in simul.syslist:   # create multiple copies
                 filename = o.filename
                 if _ss.prefix != "":
-                    filename = _ss.prefix + "_" + filename                
+                    filename = _ss.prefix + "_" + filename
                 lprop.append(filename)
 
         # trajectories are more complex, as some have per-bead output
@@ -867,7 +867,7 @@ def get_output_filenames(xml_path):
                              'd') % (_bi))
 
                     for _ss in simul.syslist:
-                        if ( o.ibead < 0 and ((_bi%(-o.ibead) == 0))) or o.ibead == _bi :
+                        if (o.ibead < 0 and ((_bi % (-o.ibead) == 0))) or o.ibead == _bi:
                             filename = o.filename
                             if _ss.prefix != "":
                                 filename = _ss.prefix + "_" + filename

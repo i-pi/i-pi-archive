@@ -96,8 +96,6 @@ class ForceBead(dobject):
             self.uid = fbuid
             fbuid += 1
 
-
-
         # stores a reference to the atoms and cell we are computing forces for
         self.atoms = atoms
         self.cell = cell
@@ -440,25 +438,25 @@ class ScaledForceComponent(dobject):
         dself = dd(self)
         dself.scaling = depend_value(name="scaling", value=scaling)
         dself.f = depend_array(name="f",
-                                     func=lambda: self.scaling * self.bf.f if scaling != 0 else np.zeros((self.bf.nbeads, 3 * self.bf.natoms)),
-                                     value=np.zeros((self.bf.nbeads, 3 * self.bf.natoms)),
-                                     dependencies=[dd(self.bf).f, dself.scaling])
+                               func=lambda: self.scaling * self.bf.f if scaling != 0 else np.zeros((self.bf.nbeads, 3 * self.bf.natoms)),
+                               value=np.zeros((self.bf.nbeads, 3 * self.bf.natoms)),
+                               dependencies=[dd(self.bf).f, dself.scaling])
         dself.pots = depend_array(name="pots",
-                                        func=lambda: self.scaling * self.bf.pots if scaling != 0 else np.zeros(self.bf.nbeads),
-                                        value=np.zeros(self.bf.nbeads),
-                                        dependencies=[dd(self.bf).pots, dself.scaling])
+                                  func=lambda: self.scaling * self.bf.pots if scaling != 0 else np.zeros(self.bf.nbeads),
+                                  value=np.zeros(self.bf.nbeads),
+                                  dependencies=[dd(self.bf).pots, dself.scaling])
         dself.virs = depend_array(name="virs", func=lambda: self.scaling * self.bf.virs,
-                                        value=np.zeros((self.bf.nbeads, 3, 3)),
-                                        dependencies=[dd(self.bf).virs, dself.scaling])
+                                  value=np.zeros((self.bf.nbeads, 3, 3)),
+                                  dependencies=[dd(self.bf).virs, dself.scaling])
         dself.extras = depend_array(name="extras", func=lambda: self.bf.extras,
-                                          value=np.zeros(self.bf.nbeads),
-                                          dependencies=[dd(self.bf).extras])
+                                    value=np.zeros(self.bf.nbeads),
+                                    dependencies=[dd(self.bf).extras])
 
         # total potential and total virial
         dself.pot = depend_value(name="pot", func=(lambda: self.pots.sum()),
-                          dependencies=[dself.pots])
+                                 dependencies=[dself.pots])
         dself.vir = depend_array(name="vir", func=self.get_vir, value=np.zeros((3, 3)),
-                          dependencies=[dself.virs])
+                                 dependencies=[dself.virs])
 
         # pipes weight from the force, since the scaling is applied on top of that
         self.weight = depend_value(name="weight", value=0)

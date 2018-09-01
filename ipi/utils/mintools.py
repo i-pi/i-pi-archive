@@ -127,8 +127,8 @@ def bracket(fdf, fdf0=None, x0=0.0, init_step=1.0e-3):
             fu, dfu = fdf(u)
             info(" @BRACKET: Evaluated new bracket point", verbosity.debug)
             # Found minimum between b and c?
-            #-b------u-----c shift:
-            #-a------b-----c
+            # -b------u-----c shift:
+            # -a------b-----c
             if fu < fc:
                 ax = bx
                 bx = u
@@ -139,8 +139,8 @@ def bracket(fdf, fdf0=None, x0=0.0, init_step=1.0e-3):
                 info(" @BRACKET: Bracketing completed: (%f:%f, %f:%f, %f:%f)" % (ax, fa, bx, fb, cx, fc), verbosity.debug)
                 return (ax, bx, cx, fb, dfb)
                 # minimum between a and u?
-                #-a-----b-----u-----c shift:
-                #-a-----b-----c
+                # -a-----b-----u-----c shift:
+                # -a-----b-----c
             elif fu > fb:
                 cx = u
                 fc = fu
@@ -156,8 +156,8 @@ def bracket(fdf, fdf0=None, x0=0.0, init_step=1.0e-3):
             fu, dfu = fdf(u)
             info(" @BRACKET: Evaluated new bracket point", verbosity.debug)
             # minimum between c and u+gold(u-cx)?
-            #-c----u----u+gold(u-cx) shift:
-            #-b----c----u
+            # -c----u----u+gold(u-cx) shift:
+            # -b----c----u
             if fu < fc:
                 bx = cx
                 cx = u
@@ -289,8 +289,8 @@ def min_brent(fdf, fdf0, x0, tol, itmax, init_step):
                 else:
                     d = d2
                 # movement must be less than half of the movement of the step before last
-                #(better not to punish algorithm for one bad step)
-                #(e: last step, olde: step before last)
+                # (better not to punish algorithm for one bad step)
+                # (e: last step, olde: step before last)
                 if abs(d) <= abs(0.5 * olde):
                     u = x + d
                     if ((u - a) < tol2) or ((b - u) < tol2):
@@ -510,7 +510,7 @@ def BFGS(x0, d0, fdf, fdf0, invhessian, big_step, tol, itmax):
     d_x = np.subtract(x, x0)
 
     # Update invhessian.
-    #Here we are breaking the fixatom constrain I 
+    # Here we are breaking the fixatom constrain I
     d_g = np.subtract(g, g0)
     hdg = np.dot(invhessian, d_g.flatten())
 
@@ -532,7 +532,7 @@ def BFGS(x0, d0, fdf, fdf0, invhessian, big_step, tol, itmax):
         info(" @MINIMIZE: Skipped invhessian update; direction x gradient insufficient", verbosity.debug)
 
     # Update direction
-    #Here we are breaking the fixatom constrain II
+    # Here we are breaking the fixatom constrain II
     d = np.dot(invhessian, -g.flatten())
     d0[:] = d.reshape(d_x.shape)
     info(" @MINIMIZE: Updated search direction", verbosity.debug)
@@ -875,8 +875,8 @@ def bracket_neb(fdf, fdf0=None, x0=0.0, init_step=1.0e-3):
             fu = fdf(u)[1]
             info(" @BRACKET: Evaluated new bracket point", verbosity.debug)
             # Found minimum between b and c?
-            #-b------u-----c shift:
-            #-a------b-----c
+            # -b------u-----c shift:
+            # -a------b-----c
             if fu < fc:
                 ax = bx
                 bx = u
@@ -885,8 +885,8 @@ def bracket_neb(fdf, fdf0=None, x0=0.0, init_step=1.0e-3):
                 info(" @BRACKET: Bracketing completed: (%f:%f, %f:%f, %f:%f)" % (ax, fa, bx, fb, cx, fc), verbosity.debug)
                 return (ax, bx, cx, fb)
                 # minimum between a and u?
-            #-a-----b-----u-----c shift:
-            #-a-----b-----c
+            # -a-----b-----u-----c shift:
+            # -a-----b-----c
             elif fu > fb:
                 cx = u
                 fc = fu
@@ -901,8 +901,8 @@ def bracket_neb(fdf, fdf0=None, x0=0.0, init_step=1.0e-3):
             fu = fdf(u)[1]
             info(" @BRACKET: Evaluated new bracket point", verbosity.debug)
             # minimum between c and u+gold(u-cx)?
-            #-c----u----u+gold(u-cx) shift:
-            #-b----c----u
+            # -c----u----u+gold(u-cx) shift:
+            # -b----c----u
             if fu < fc:
                 bx = cx
                 cx = u
@@ -1225,7 +1225,7 @@ def nichols(f0, f1, d, dynmax, m3, big_step, mode=1):
     d = d[:, np.newaxis]  # dimension nx1
     gEt = -np.dot(f, dynmax)  # Change of basis  #
     gE = gEt.T  # dimension (n-m)x1
-        # The step has the general form:
+    # The step has the general form:
     # d_x[j] =  alpha *( gE[j] )  / ( lambda-d[j] )
 
     if mode == 0:
@@ -1257,7 +1257,7 @@ def nichols(f0, f1, d, dynmax, m3, big_step, mode=1):
                 alpha = (d[0] - d[1]) / d[1]
                 lamb = (d[0] + 3 * d[1]) / 4
 
-        #elif d[1] < 0:  #Litman for Second Order Saddle point
+        # elif d[1] < 0:  #Litman for Second Order Saddle point
         #    alpha = 1
         #    lamb = (d[1] + d[2]) / 4
         #    print 'WARNING: We are not using the standar Nichols'

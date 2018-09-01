@@ -9,10 +9,10 @@ import os.path
 def banded_hessian(h, im, shift=0.001):
     """Given Hessian in the reduced format (h), construct
     the upper band hessian including the RP terms"""
-    nbeads   = im.dbeads.nbeads
-    natoms   = im.dbeads.natoms
-    ii       = natoms * 3 * nbeads
-    ndiag    = natoms * 3 + 1 #only upper diagonal form
+    nbeads = im.dbeads.nbeads
+    natoms = im.dbeads.natoms
+    ii = natoms * 3 * nbeads
+    ndiag = natoms * 3 + 1  # only upper diagonal form
 
     # np.set_printoptions(precision=6, suppress=True, threshold=np.nan, linewidth=1000)
 
@@ -20,39 +20,41 @@ def banded_hessian(h, im, shift=0.001):
 
     # add physical part
     for i in range(nbeads):
-        h_aux = h[:, i*natoms*3:(i+1)*natoms*3] #Peaks one physical hessian
+        h_aux = h[:, i * natoms * 3:(i + 1) * natoms * 3]  # Peaks one physical hessian
         for j in range(1, ndiag):
-            hnew[j, (ndiag-1-j)+i*natoms*3:(i+1)*natoms*3] = np.diag(h_aux, ndiag-1-j)
+            hnew[j, (ndiag - 1 - j) + i * natoms * 3:(i + 1) * natoms * 3] = np.diag(h_aux, ndiag - 1 - j)
 
     # add spring parts
 
-    if nbeads>1:
+    if nbeads > 1:
         # Diagonal
         d_corner = im.dbeads.m3[0] * im.omega2
         d_0 = np.array([[d_corner * 2]]).repeat(im.dbeads.nbeads - 2, axis=0).flatten()
         diag_sp = np.concatenate((d_corner, d_0, d_corner))
-        hnew[-1,:] += diag_sp
+        hnew[-1, :] += diag_sp
 
         # Non-Diagonal
         d_out = - d_corner
-        ndiag_sp = np.array([[d_out]]).repeat(im.dbeads.nbeads-1, axis=0).flatten()
-        hnew[0,:] = np.concatenate((np.zeros(natoms*3), ndiag_sp ))
+        ndiag_sp = np.array([[d_out]]).repeat(im.dbeads.nbeads - 1, axis=0).flatten()
+        hnew[0, :] = np.concatenate((np.zeros(natoms * 3), ndiag_sp))
 
     # Add safety shift value
-    hnew[-1,:] += shift
+    hnew[-1, :] += shift
 
     return hnew
+
 
 def sym_band(A):
     """Return symmetric banded matrix from just upper banded."""
     u = len(A) - 1
     l = u
     M = A.shape[1]
-    newA = np.empty((u+l+1, M))
-    newA[:u+1] = A
-    for i in xrange(1, l+1):
-        newA[u+i, :M-i] = A[-1-i, i:]
+    newA = np.empty((u + l + 1, M))
+    newA[:u + 1] = A
+    for i in xrange(1, l + 1):
+        newA[u + i, :M - i] = A[-1 - i, i:]
     return newA
+
 
 def invmul_banded(A, B, posdef=False):
     """A is in upper banded form
@@ -82,7 +84,7 @@ def red2comp(h, nbeads, natoms):
     """Takes the reduced physical hessian and construct the 'complete' one (all 0 included) """
     info("\n @Instanton: Creating 'complete' physical hessian \n", verbosity.high)
     i = natoms * 3
-    ii = nbeads*i
+    ii = nbeads * i
     h0 = np.zeros((ii, ii), float)
 
     for j in range(nbeads):
@@ -100,7 +102,6 @@ def get_hessian(h, gm, x0, d=0.0005):
         """
     # TODO What about the case you have numerical gradients?
 
-
     info(" @Instanton: Computing hessian", verbosity.low)
     ii = gm.dbeads.natoms * 3
     h[:] = np.zeros((h.shape), float)
@@ -110,25 +111,23 @@ def get_hessian(h, gm, x0, d=0.0005):
     # ddcell = gm.dcell.copy()
     # ddforces = gm.dforces.copy(ddbeads, ddcell)
 
-
     i0 = -1
-    #Check if there is a temporal file:
-    for i in range(ii,-1,-1):
+    # Check if there is a temporal file:
+    for i in range(ii, -1, -1):
         try:
             b = np.loadtxt('hessian_' + str(i) + '.tmp')
         except IOError:
             pass
         else:
             h[:, :] = b[:, :]
-            i0=i
+            i0 = i
             print('We have found a temporary file ( hessian_' + str(i) + '.tmp). ')
-            if b.shape == h.shape: #Check that the last temporal file was properly written
+            if b.shape == h.shape:  # Check that the last temporal file was properly written
                 break
             else:
                 continue
 
-
-    for j in range(i0+1,ii):
+    for j in range(i0 + 1, ii):
         info(" @Instanton: Computing hessian: %d of %d" % ((j + 1), ii), verbosity.low)
         x = x0.copy()
 
@@ -138,11 +137,9 @@ def get_hessian(h, gm, x0, d=0.0005):
         e, f2 = gm(x)
         g = (f1 - f2) / (2 * d)
 
+        h[j, :] = g.flatten()
 
-
-        h[j,:] = g.flatten()
-
-        f = open('hessian_'+str(j)+'.tmp', 'w')
+        f = open('hessian_' + str(j) + '.tmp', 'w')
         #print >> f, 'STEP %i' % j
         np.savetxt(f, h)
         f.close()
@@ -158,6 +155,7 @@ def get_hessian(h, gm, x0, d=0.0005):
             os.remove('hessian_' + str(i) + '.tmp')
         except OSError:
             pass
+
 
 def clean_hessian(h, q, natoms, nbeads, m, m3, asr, mofi=False):
     """
@@ -319,10 +317,10 @@ def get_imvector(h, m3):
 
 def print_instanton_geo(prefix, step, nbeads, natoms, names, q, pots, cell, shift):
 
-    outfile = open(prefix+'_'+str(step)+'.ener', 'w')
+    outfile = open(prefix + '_' + str(step) + '.ener', 'w')
     print >> outfile, ('#Bead    Energy (eV)')
     for i in range(nbeads):
-        print >> outfile, (str(i)+'     '+str(units.unit_to_user('energy', "electronvolt", pots[i] - shift)))
+        print >> outfile, (str(i) + '     ' + str(units.unit_to_user('energy', "electronvolt", pots[i] - shift)))
     outfile.close()
 
     # print_file("xyz", pos[0], cell, out, title='positions{angstrom}')
@@ -330,7 +328,7 @@ def print_instanton_geo(prefix, step, nbeads, natoms, names, q, pots, cell, shif
     unit = 'angstrom'
     a, b, c, alpha, beta, gamma = mt.h2abc_deg(cell.h)
 
-    outfile = open(prefix + '_'+str(step)+'.xyz', 'w')
+    outfile = open(prefix + '_' + str(step) + '.xyz', 'w')
     for i in range(nbeads):
         print >> outfile, natoms
         # print >> outfile, (('CELL(abcABC): Traj: positions(%s) Bead: %i' %(unit,i) ))
@@ -346,10 +344,9 @@ def print_instanton_geo(prefix, step, nbeads, natoms, names, q, pots, cell, shif
     outfile.close()
 
 
-
 def print_instanton_hess(prefix, step, hessian):
 
     np.set_printoptions(precision=7, suppress=True, threshold=np.nan, linewidth=3000)
-    outfile = open(prefix + '.hess_'+str(step), 'w')
+    outfile = open(prefix + '.hess_' + str(step), 'w')
     np.savetxt(outfile, hessian.reshape(1, hessian.size))
     outfile.close()

@@ -35,13 +35,13 @@ def main(fn_input, options):
     """Loads and runs the simulation stored in `fn_input`."""
 
     # optionally profile this run - set up
-    #~ if do_yappi:
-    #~ try:
-    #~ import yappi
+    # ~ if do_yappi:
+    # ~ try:
+    # ~ import yappi
     #~ yappi.start(builtins=True, profile_threads=True)
-    #~ except ImportError:
-    #~ print 'Profiling with yappi was enabled but could not be imported.'
-    #~ print "Profiling with yappi was enabled but could not be imported."
+    # ~ except ImportError:
+    # ~ print 'Profiling with yappi was enabled but could not be imported.'
+    # ~ print "Profiling with yappi was enabled but could not be imported."
     #~ sys.exit(1)
 
     # construct simulation based on input file
