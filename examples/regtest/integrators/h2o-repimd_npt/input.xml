@@ -30,6 +30,7 @@ ENDREGTEST -->
                  <force forcefield ="qtip4pf"> </force>
               </forces> 
               <motion mode="dynamics">
+                 <fixcom> False </fixcom>
                  <dynamics mode="npt">
                     <barostat mode="isotropic">
                         <tau units="femtosecond"> 1189.3531 </tau>
