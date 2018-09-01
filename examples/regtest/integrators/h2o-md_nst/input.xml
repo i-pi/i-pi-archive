@@ -24,6 +24,7 @@ ENDREGTEST -->
       <force forcefield='lammps'> </force>
     </forces>
     <motion mode='dynamics'>
+      <fixcom> False </fixcom>
       <dynamics mode='nst'>
         <timestep units='femtosecond'> 0.5 </timestep>
         <barostat mode='anisotropic'>
