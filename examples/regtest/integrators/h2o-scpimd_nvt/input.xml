@@ -27,7 +27,7 @@ ENDREGTEST -->
       <fixcom> False </fixcom>
       <dynamics mode='sc'>
         <timestep units='femtosecond'> 1.0 </timestep>
-        <thermostat mode='langevin'>
+        <thermostat mode='svr'>
           <tau units='femtosecond'> 100 </tau>
   	</thermostat>
   	<nmts> [4] </nmts>
