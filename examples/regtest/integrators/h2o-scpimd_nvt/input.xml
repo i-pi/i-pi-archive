@@ -4,11 +4,11 @@ COMMAND(1) lmp_serial -i in.lmp
 ENDREGTEST -->
 <simulation verbosity='high'>
   <output prefix='simulation'>
-    <properties stride='1' filename='out'>  [ step, time{picosecond}, conserved{electronvolt}, temperature{kelvin}, kinetic_cv{electronvolt}, potential{electronvolt}, pressure_cv{megapascal} ] </properties>
+    <properties stride='1' filename='out'>  [ step, time{picosecond}, conserved{electronvolt}, temperature{kelvin}, kinetic_opsc{electronvolt}, potential_opsc{electronvolt}, pressure_cv{megapascal} ] </properties>
     <trajectory filename='pos' stride='1'> positions </trajectory>
     <checkpoint stride='200'/>
   </output>
-  <total_steps>10</total_steps>
+  <total_steps>5</total_steps>
   <prng>
     <seed>31415</seed>
   </prng>
@@ -16,7 +16,7 @@ ENDREGTEST -->
     <address>h2o-pimd.1</address>
   </ffsocket>
   <system>
-    <initialize nbeads='4'>
+    <initialize nbeads='16'>
       <file mode='pdb'> init.pdb </file>
       <velocities mode='thermal' units='kelvin'> 300 </velocities>
     </initialize>
@@ -28,8 +28,8 @@ ENDREGTEST -->
         <timestep units='femtosecond'> 1.0 </timestep>
         <thermostat mode='langevin'>
           <tau units='femtosecond'> 100 </tau>
-  	    </thermostat>
-  	    <nmts> [4] </nmts>
+  	</thermostat>
+  	<nmts> [4] </nmts>
       </dynamics>
     </motion>
     <ensemble>
