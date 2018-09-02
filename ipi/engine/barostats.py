@@ -773,55 +773,9 @@ class BaroRGB(Barostat):
 
             pc = dstrip(self.beads.pc).reshape(self.beads.natoms, 3)
             fc = np.sum(dstrip(self.forces.forces_mts(level)), axis=0).reshape(self.beads.natoms, 3) / self.beads.nbeads
-            fcTonm = (fc / m).T
+            fcTonm = (fc / dstrip(self.beads.m3)[0].reshape(self.beads.natoms, 3)).T
 
             self.p += np.triu(dt2 * np.dot(fcTonm, pc) + dt3 * np.dot(fcTonm, fc)) * self.beads.nbeads
-
-    def pkinstep(self, level=0):
-        """Propagates the momenta for half a time step."""
-
-        dthalf = self.pdt[level]
-        dthalf2 = dthalf**2
-        dthalf3 = dthalf**3 / 3.0
-
-        hh0 = np.dot(self.cell.h, self.h0.ih)
-        pi_ext = np.dot(hh0, np.dot(self.stressext, hh0.T)) * self.h0.V / self.cell.V
-        L = np.diag([3, 2, 1])
-
-        # This differs from the BZP thermostat in that it uses just one kT in the propagator.
-        # This leads to an ensemble equaivalent to Martyna-Hughes-Tuckermann for both fixed and moving COM
-        # Anyway, it is a small correction so whatever.
-
-        pc = dstrip(self.beads.pc)
-        m = dstrip(self.beads.m)
-        na3 = 3 * self.beads.natoms
-
-        kst = np.zeros((3, 3), float)
-        for i in range(3):
-            kst[i, i] += np.dot(pc[i:na3:3], pc[i:na3:3] / m) * self.beads.nbeads
-
-        stress = kst / self.cell.V
-
-        self.p += dthalf * (self.cell.V * np.triu(stress - self.beads.nbeads * pi_ext) +
-                            Constants.kb * self.temp * L)
-
-        fc = np.sum(dstrip(self.forces.forces_mts(level)), 0).reshape(self.beads.natoms, 3) / self.beads.nbeads
-        if self.bias != None: fc += np.sum(dstrip(self.bias.f), 0).reshape(self.beads.natoms, 3) / self.beads.nbeads
-        fcTonm = (fc / dstrip(self.beads.m3)[0].reshape(self.beads.natoms, 3)).T
-        pc = dstrip(self.beads.pc).reshape(self.beads.natoms, 3)
-
-        # I am not 100% sure, but these higher-order terms come from integrating the pressure virial term,
-        # so they should need to be multiplied by nbeads to be consistent with the equations of motion in the PI context
-        # again, these are tiny tiny terms so whatever.
-        self.p += np.triu(dthalf2 * np.dot(fcTonm, pc) + dthalf3 * np.dot(fcTonm, fc)) * self.beads.nbeads
-
-    def pvirstep(self, level):
-        """Propagates the momenta for half a time step."""
-
-        dt = self.pdt[level]
-
-        stress = dstrip(self.stress_mts(level))
-        self.p += dt * (self.cell.V * np.triu(stress))
 
     def qcstep(self):
         """Propagates the centroid position and momentum and the volume."""
