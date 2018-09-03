@@ -738,7 +738,7 @@ class BaroRGB(Barostat):
 
         # defines the term that accounts for the explicit dependence of the volume on the ensemble
         dself.cell_jacobian = depend_value(name='cell_jacobian', func=self.get_cell_jacobian,
-                                   dependencies=[dd(self.cell).V, dself.temp])
+                                   dependencies=[dd(self.cell).h, dself.temp])
 
         # the barostat energy must be computed from bits & pieces (overwrite the default)
         dself.ebaro = depend_value(name='ebaro', func=self.get_ebaro,

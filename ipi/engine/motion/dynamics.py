@@ -163,6 +163,11 @@ class Dynamics(Motion):
         self.ensemble.add_econs(dthrm.ethermo)
         self.ensemble.add_econs(dbaro.ebaro)
 
+        # adds the potential, kinetic enrgy and the cell jacobian to the ensemble
+        self.ensemble.add_xlpot(dbaro.pot)
+        self.ensemble.add_xlpot(dbaro.cell_jacobian)
+        self.ensemble.add_xlkin(dbaro.kin)
+
         #!TODO THOROUGH CLEAN-UP AND CHECK
         if self.enstype == "nvt" or self.enstype == "npt" or self.enstype == "nst":
             if self.ensemble.temp < 0:
