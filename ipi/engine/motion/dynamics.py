@@ -168,6 +168,9 @@ class Dynamics(Motion):
         self.ensemble.add_xlpot(dbaro.cell_jacobian)
         self.ensemble.add_xlkin(dbaro.kin)
 
+        # applies constraints immediately after initialization.
+        self.integrator.pconstraints()
+
         #!TODO THOROUGH CLEAN-UP AND CHECK
         if self.enstype == "nvt" or self.enstype == "npt" or self.enstype == "nst":
             if self.ensemble.temp < 0:
