@@ -420,12 +420,12 @@ class BaroBZP(Barostat):
 
         # NOTE: since there are nbeads replicas of the unit cell, the enthalpy contains a nbeads factor
         # NOTE: we also add a correction that accounts for the size of the box
-        return self.cell.V * self.pext * self.beads.nbeads - np.log(self.cell.V) * Constants.kb * self.temp
+        return self.cell.V * self.pext * self.beads.nbeads
 
     def get_ebaro(self):
         """Calculates the barostat conserved quantity."""
 
-        return self.thermostat.ethermo + self.kin + self.pot
+        return self.thermostat.ethermo + self.kin + self.pot - np.log(self.cell.V) * Constants.kb * self.temp
 
     def pstep(self, level=0):
         """Propagates the momentum of the barostat."""
