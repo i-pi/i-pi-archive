@@ -30,6 +30,7 @@ ENDREGTEST -->
                  <force forcefield ="qtip4pf"> </force>
               </forces> 
               <motion mode="dynamics">
+                 <fixcom> False </fixcom>
                  <dynamics mode="sc">
                     <timestep units="femtosecond"> 0.25 </timestep>
                     <thermostat mode="pile_g">
