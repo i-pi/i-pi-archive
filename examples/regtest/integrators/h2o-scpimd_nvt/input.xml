@@ -16,7 +16,7 @@ ENDREGTEST -->
     <address>h2o-pimd.1</address>
   </ffsocket>
   <system>
-    <initialize nbeads='16'>
+    <initialize nbeads='8'>
       <file mode='pdb'> init.pdb </file>
       <velocities mode='thermal' units='kelvin'> 300 </velocities>
     </initialize>
@@ -29,8 +29,8 @@ ENDREGTEST -->
         <timestep units='femtosecond'> 1.0 </timestep>
         <thermostat mode='svr'>
           <tau units='femtosecond'> 100 </tau>
-  	</thermostat>
-  	<nmts> [4] </nmts>
+        </thermostat>
+        <nmts> [4] </nmts>
       </dynamics>
     </motion>
     <ensemble>
