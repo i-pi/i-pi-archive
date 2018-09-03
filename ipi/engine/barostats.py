@@ -145,6 +145,8 @@ class Barostat(dobject):
         dself.pot = depend_value(name='pot', value=0.0)
 
         dself.kin = depend_value(name='kin', value=0.0)
+        
+        dself.cell_jacobian = depend_value(name='kin', value=0.0)
 
         if bias != None:
             dself.kstress.add_dependency(dget(bias, "f"))
@@ -409,6 +411,10 @@ class BaroBZP(Barostat):
                                  func=(lambda: 0.5 * self.p[0]**2 / self.m[0]),
                                  dependencies=[dself.p, dself.m])
 
+        # defines the term that accounts for the explicit dependence of the volume on the ensemble
+        dself.cell_jacobian = depend_value(name='cell_jacobian', func=self.get_cell_jacobian,
+                                   dependencies=[dd(self.cell).V, dself.temp])
+
         # the barostat energy must be computed from bits & pieces (overwrite the default)
         dself.ebaro = depend_value(name='ebaro', func=self.get_ebaro,
                                    dependencies=[dself.kin, dself.pot,
@@ -419,13 +425,18 @@ class BaroBZP(Barostat):
         """Calculates the elastic strain energy of the cell."""
 
         # NOTE: since there are nbeads replicas of the unit cell, the enthalpy contains a nbeads factor
-        # NOTE: we also add a correction that accounts for the size of the box
         return self.cell.V * self.pext * self.beads.nbeads
+
+    def get_cell_jacobian(self):
+        """Calculates the energy term that accounts for the size of the box"""
+
+        return -1.0 * np.log(self.cell.V) * Constants.kb * self.temp
+
 
     def get_ebaro(self):
         """Calculates the barostat conserved quantity."""
 
-        return self.thermostat.ethermo + self.kin + self.pot - np.log(self.cell.V) * Constants.kb * self.temp
+        return self.thermostat.ethermo + self.kin + self.pot + self.cell_jacobian
 
     def pstep(self, level=0):
         """Propagates the momentum of the barostat."""
@@ -548,6 +559,10 @@ class BaroSCBZP(Barostat):
                                  func=(lambda: 0.5 * self.p[0]**2 / self.m[0]),
                                  dependencies=[dself.p, dself.m])
 
+        # defines the term that accounts for the explicit dependence of the volume on the ensemble
+        dself.cell_jacobian = depend_value(name='cell_jacobian', func=self.get_cell_jacobian,
+                                   dependencies=[dd(self.cell).V, dself.temp])
+
         # the barostat energy must be computed from bits & pieces (overwrite the default)
         dself.ebaro = depend_value(name='ebaro', func=self.get_ebaro,
                                    dependencies=[dself.kin, dself.pot,
@@ -560,10 +575,15 @@ class BaroSCBZP(Barostat):
         # NOTE: since there are nbeads replicas of the unit cell, the enthalpy contains a nbeads factor
         return self.cell.V * self.pext * self.beads.nbeads
 
+    def get_cell_jacobian(self):
+        """Calculates the energy term that accounts for the size of the box"""
+
+        return -1.0 * np.log(self.cell.V) * Constants.kb * self.temp
+
     def get_ebaro(self):
         """Calculates the barostat conserved quantity."""
 
-        return self.thermostat.ethermo + self.kin + self.pot - np.log(self.cell.V) * Constants.kb * self.temp
+        return self.thermostat.ethermo + self.kin + self.pot + self.cell_jacobian
 
     def pscstep(self):
         """Propagates the momentum of the barostat with respect to the 
@@ -716,6 +736,10 @@ class BaroRGB(Barostat):
                                  func=(lambda: 0.5 * np.trace(np.dot(self.p.T, self.p)) / self.m[0]),
                                  dependencies=[dself.p, dself.m])
 
+        # defines the term that accounts for the explicit dependence of the volume on the ensemble
+        dself.cell_jacobian = depend_value(name='cell_jacobian', func=self.get_cell_jacobian,
+                                   dependencies=[dd(self.cell).V, dself.temp])
+
         # the barostat energy must be computed from bits & pieces (overwrite the default)
         dself.ebaro = depend_value(name='ebaro', func=self.get_ebaro,
                                    dependencies=[dself.kin, dself.pot,
@@ -744,12 +768,16 @@ class BaroRGB(Barostat):
 
         return self.h0.V * np.trace(np.dot(self.stressext, eps)) * self.beads.nbeads
 
+    def get_cell_jacobian(self):
+        """Calculates the energy term that accounts for the size of the box."""
+
+        cj = np.sum([(3 - i) * np.log(self.cell.h[i][i]) for i in range(3)])
+        return -1.0 * Constants.kb * self.temp * cj
+
     def get_ebaro(self):
         """Calculates the barostat conserved quantity."""
 
-        lastterm = np.sum([(3 - i) * np.log(self.cell.h[i][i]) for i in range(3)])
-        lastterm = Constants.kb * self.temp * lastterm
-        return self.thermostat.ethermo + self.kin + self.pot - lastterm
+        return self.thermostat.ethermo + self.kin + self.pot + self.cell_jacobian
 
     def pstep(self, level=0):
         """Propagates the momenta for half a time step."""
