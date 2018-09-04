@@ -149,8 +149,8 @@ class Barostat(dobject):
         dself.cell_jacobian = depend_value(name='kin', value=0.0)
 
         if bias != None:
-            dself.kstress.add_dependency(dget(bias, "f"))
-            dself.stress.add_dependency(dget(bias, "vir"))
+            dself.kstress.add_dependency(dd(bias).f)
+            dself.stress.add_dependency(dd(bias).vir)
 
         # Stress depend objects for Suzuki-Chin PIMD
         dself.kstress_sc = depend_value(name='kstress_sc', func=self.get_kstress_sc,
