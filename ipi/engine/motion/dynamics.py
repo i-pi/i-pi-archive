@@ -136,7 +136,6 @@ class Dynamics(Motion):
         # n times the temperature (for path integral partition function)
         dself.ntemp = depend_value(name='ntemp', func=self.get_ntemp,
                                    dependencies=[dd(self.ensemble).temp])
-        self.integrator.pconstraints()
 
         fixdof = len(self.fixatoms) * 3 * self.beads.nbeads
         if self.fixcom:
@@ -171,6 +170,7 @@ class Dynamics(Motion):
         self.ensemble.add_xlpot(dd(self.barostat).pot)
         self.ensemble.add_xlkin(dd(self.barostat).kin)
 
+        self.integrator.pconstraints()
         #!TODO THOROUGH CLEAN-UP AND CHECK
         # if self.enstype in ["nvt", "npt", "nst"]:
         if self.enstype == "nvt" or self.enstype == "npt" or self.enstype == "nst":
