@@ -296,7 +296,7 @@ class BaroBZP(Barostat):
         # the barostat energy must be computed from bits & pieces (overwrite the default)
         dself.ebaro = depend_value(name='ebaro', func=self.get_ebaro,
                                    dependencies=[dself.kin, dself.pot,
-                                                 dd(self.cell).V, dself.temp,
+                                                 dself.cell_jacobian,
                                                  dd(self.thermostat).ethermo])
 
     def get_pot(self):
@@ -469,7 +469,7 @@ class BaroRGB(Barostat):
         # the barostat energy must be computed from bits & pieces (overwrite the default)
         dself.ebaro = depend_value(name='ebaro', func=self.get_ebaro,
                                    dependencies=[dself.kin, dself.pot,
-                                                 dd(self.cell).h, dself.temp,
+                                                 dself.cell_jacobian,
                                                  dd(self.thermostat).ethermo])
 
     def get_3x3to6(self):
