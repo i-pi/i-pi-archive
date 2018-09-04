@@ -95,7 +95,7 @@ class Dynamics(Motion):
             self.integrator = DummyIntegrator()
 
         # splitting mode for the integrators
-        dd(self).splitting = depend_value(name='dt', value=splitting)
+        dd(self).splitting = depend_value(name='splitting', value=splitting)
 
         # constraints
         self.fixcom = fixcom
