@@ -559,14 +559,14 @@ class BaroSCBZP(Barostat):
                                  func=(lambda: 0.5 * self.p[0]**2 / self.m[0]),
                                  dependencies=[dself.p, dself.m])
 
-        # defines the term that accounts for the explicit dependence of the volume on the ensemble
+        # defines the term that accounts for the explicit dependence of the ensemble probability on the volume
         dself.cell_jacobian = depend_value(name='cell_jacobian', func=self.get_cell_jacobian,
                                    dependencies=[dd(self.cell).V, dself.temp])
 
         # the barostat energy must be computed from bits & pieces (overwrite the default)
         dself.ebaro = depend_value(name='ebaro', func=self.get_ebaro,
                                    dependencies=[dself.kin, dself.pot,
-                                                 dd(self.cell).V, dself.temp,
+                                                 dself.cell_jacobian,                                                 
                                                  dd(self.thermostat).ethermo])
 
     def get_pot(self):
@@ -736,14 +736,14 @@ class BaroRGB(Barostat):
                                  func=(lambda: 0.5 * np.trace(np.dot(self.p.T, self.p)) / self.m[0]),
                                  dependencies=[dself.p, dself.m])
 
-        # defines the term that accounts for the explicit dependence of the volume on the ensemble
+        # defines the term that accounts for the explicit dependence of the ensemble on the cell
         dself.cell_jacobian = depend_value(name='cell_jacobian', func=self.get_cell_jacobian,
                                    dependencies=[dd(self.cell).h, dself.temp])
 
         # the barostat energy must be computed from bits & pieces (overwrite the default)
         dself.ebaro = depend_value(name='ebaro', func=self.get_ebaro,
                                    dependencies=[dself.kin, dself.pot,
-                                                 dd(self.cell).h, dself.temp,
+                                                 dself.cell_jacobian,
                                                  dd(self.thermostat).ethermo])
 
     def get_3x3to6(self):
