@@ -168,6 +168,7 @@ class Dynamics(Motion):
 
         # adds potential and kinetic energy for the barostat to the ensemble
         self.ensemble.add_xlpot(dd(self.barostat).pot)
+        self.ensemble.add_xlpot(dd(self.barostat).cell_jacobian)
         self.ensemble.add_xlkin(dd(self.barostat).kin)
 
         self.integrator.pconstraints()
