@@ -5,7 +5,7 @@ COMMAND(1) lmp_serial -i in.partcontr
 COMMAND(8) lmp_serial -i in.partbeads
 ENDREGTEST -->
 
-<simulation>
+<simulation threading='false'>
     <ffsocket mode='unix' name='benbeads' pbc='true'>
          <latency>  1.00000000e-03</latency>
          <slots> 8 </slots>
@@ -43,7 +43,7 @@ ENDREGTEST -->
    </prng>
    <system>
    <motion mode='dynamics'>
-     <dynamics mode='nvt'>
+     <dynamics mode='mts'>
           <timestep units="femtosecond"> 0.50 </timestep>
           <thermostat mode='pile_l'>
             <tau units="femtosecond">100</tau>
