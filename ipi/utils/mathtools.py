@@ -42,7 +42,7 @@ def logsumlog(lasa, lbsb):
     return (lr, sr)
 
 
-def matrix_exp(M, ntaylor=15, nsquare=15):
+def matrix_exp(M, ntaylor=20, nsquare=10):
     """Computes the exponential of a square matrix via a Taylor series.
 
     Calculates the matrix exponential by first calculating exp(M/(2**nsquare)),
