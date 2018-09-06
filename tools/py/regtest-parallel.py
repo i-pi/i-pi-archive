@@ -161,7 +161,7 @@ def main():
     create_dir(root_run)
 
     # If no --add-test has been specified, search for tests in all directories
-    #+within the root_test_folder.
+    # +within the root_test_folder.
     if len(tests_list) == 0:
         tests_list = ['']
 
@@ -510,14 +510,14 @@ class Test(threading.Thread):
                         inplace_change(_word, address, new_address)
 
                 # Replace only the first occurrence of 'address' in the
-                #+driver command!
+                # +driver command!
                 self.driver_command[_ii] = _buffer.replace(address,
                                                            new_address,
                                                            1)
 
             # Since there could be more than a single socket used within a
-            #+single simulation, it is important to have a different address for
-            #+each socket.
+            # +single simulation, it is important to have a different address for
+            # +each socket.
             address_index += 1
 
         xml.write(self.test_path)

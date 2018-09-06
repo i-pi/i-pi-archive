@@ -338,8 +338,8 @@ class Initializer(dobject):
                     rh = init_chk(v.value)[1].h
                 elif init_file(v.mode, v.value)[1].h.trace() == -3:
                     # In case the file do not contain any
-                    #+ cell parameters, the diagonal elements of the cell will be
-                    #+set to -1 from the io_units and nothing is read here.
+                    # + cell parameters, the diagonal elements of the cell will be
+                    # +set to -1 from the io_units and nothing is read here.
                     continue
                 else:
                     rh = init_file(v.mode, v.value, cell_units=v.units)[1].h

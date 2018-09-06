@@ -2,7 +2,7 @@
 DEPENDENCIES init.xyz  in.lmp data.lmp
 COMMAND(4) lmp_serial -i in.lmp
 ENDREGTEST -->
-<simulation verbosity='high'>
+<simulation verbosity='high' threading='false'>
   <output prefix='simulation'>
     <properties stride='1' filename='out'>  [ step, time{picosecond}, conserved, temperature{kelvin}, kinetic_cv, potential, pressure_cv{megapascal}, volume, cell_h] </properties>
     <trajectory stride='1' filename='xc' format='pdb' cell_units='angstrom'> x_centroid{angstrom}</trajectory>

@@ -5,7 +5,7 @@ COMMAND(1) lmp_serial -i in.partcontr
 COMMAND(8) lmp_serial -i in.partbeads
 ENDREGTEST -->
 
-<simulation>
+<simulation threading='false'>
     <ffsocket mode='unix' name='benbeads' pbc='true'>
          <latency>  1.00000000e-03</latency>
          <slots> 8 </slots>
@@ -30,7 +30,7 @@ ENDREGTEST -->
          <address> fullcent3 </address>
    </ffsocket>
 
-   <total_steps>105000</total_steps>
+   <total_steps>100</total_steps>
    <output prefix="databoth">
       <trajectory filename='for' stride='100' format='xyz' cell_units='angstrom'> forces </trajectory>
       <trajectory stride="100" filename="pos" cell_units="angstrom">positions{angstrom}</trajectory>
@@ -44,10 +44,11 @@ ENDREGTEST -->
    <system>
    <motion mode='dynamics'>
      <dynamics mode='nvt'>
-          <timestep units="femtosecond"> 0.10 </timestep>
+          <timestep units="femtosecond"> 0.50 </timestep>
           <thermostat mode='pile_l'>
             <tau units="femtosecond">100</tau>
-         </thermostat>
+          </thermostat>
+          <nmts> [1, 4] </nmts>
      </dynamics>
    </motion>
       <forces> 
