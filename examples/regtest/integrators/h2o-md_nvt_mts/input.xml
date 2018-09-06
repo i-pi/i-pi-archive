@@ -34,7 +34,7 @@ ENDREGTEST -->
     </forces>
     <motion mode='dynamics'>
       <fixcom> False </fixcom>
-      <dynamics mode='mts'>
+      <dynamics mode='nvt'>
         <timestep units='femtosecond'> 2.00 </timestep>
         <thermostat mode='svr'>
           <tau units='femtosecond'> 100 </tau>

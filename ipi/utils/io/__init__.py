@@ -21,7 +21,6 @@ from ipi.utils.decorators import cached
 
 __all__ = ["io_units", "iter_file", "print_file_path", "print_file", "read_file"]
 
-
 mode_map = {
     "bin": "binary",
 }

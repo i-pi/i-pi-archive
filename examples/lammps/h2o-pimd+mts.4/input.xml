@@ -33,7 +33,7 @@
       </force>
     </forces>
     <motion mode='dynamics'>
-      <dynamics mode='mts'>
+      <dynamics mode='nvt'>
         <timestep units='femtosecond'> 2.00 </timestep>
         <thermostat mode='langevin'>
           <tau units='femtosecond'> 100 </tau>

@@ -259,6 +259,9 @@ class InputFFPlumed(InputForceField):
         super(InputFFPlumed, self).store(ff)
         self.precision.store(ff.precision)
         self.plumeddat.store(ff.plumeddat)
+        # pstep = ff.plumedstep
+        # if pstep > 0: pstep -= 1 # roll back plumed step before writing a restart
+        # self.plumedstep.store(pstep)
         self.plumedstep.store(ff.plumedstep)
         self.init_file.store(ff.init_file)
 

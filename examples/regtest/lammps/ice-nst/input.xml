@@ -4,8 +4,9 @@ COMMAND(4) lmp_serial -i in.lmp
 ENDREGTEST -->
 <simulation verbosity='high' threading='false'>
   <output prefix='simulation'>
-    <properties stride='1' filename='out'>  [ step, time{picosecond}, conserved , virial_cv ] </properties>
-    <trajectory stride='1' filename='xc' format='pdb' cell_units='angstrom'> x_centroid{angstrom}</trajectory>
+	  <properties stride='1' filename='out'>  [ step, time{picosecond}, conserved , potential, temperature{kelvin{ virial_cv ] </properties>
+	  <trajectory stride='1' filename='xc' format='xyz' cell_units='angstrom'> x_centroid{angstrom}</trajectory>
+	  <trajectory stride='10' filename='pos' format='xyz' cell_units='angstrom'> positions{angstrom}</trajectory>
     <checkpoint stride='2000'/>
   </output>
   <total_steps>20</total_steps>
