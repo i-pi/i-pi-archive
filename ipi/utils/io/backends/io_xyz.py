@@ -71,8 +71,8 @@ def print_xyz(atoms, cell, filedesc=sys.stdout, title="", cell_conv=1.0, atoms_c
 
 # Cell type patterns
 cell_re = [re.compile('CELL[\(\[\{]abcABC[\)\]\}]: ([-+0-9\.Ee ]*)\s*'),
-           re.compile('CELL[\(\[\{]GENH[\)\]\}]: ([-+0-9\.?Ee ]*)\s*'),
-           re.compile('CELL[\(\[\{]H[\)\]\}]: ([-+0-9\.?Ee ]*)\s*')]
+           re.compile('CELL[\(\[\{]H[\)\]\}]: ([-+0-9\.?Ee ]*)\s*'),
+           re.compile('CELL[\(\[\{]GENH[\)\]\}]: ([-+0-9\.?Ee ]*)\s*')]
 
 
 def read_xyz(filedesc):
@@ -101,10 +101,10 @@ def read_xyz(filedesc):
         alpha, beta, gamma = [float(x) * deg2rad
                               for x in cell[0].group(1).split()[3:6]]
         h = mt.abc2h(a, b, c, alpha, beta, gamma)
-    elif cell[1] is not None:  # GENH
+    elif cell[1] is not None:  # H
         h = np.array(cell[1].group(1).split()[:9], float)
         h.resize((3, 3))
-    elif cell[2] is not None:  # H
+    elif cell[2] is not None:  # GENH
         genh = np.array(cell[2].group(1).split()[:9], float)
         genh.resize((3, 3))
         invgenh = np.linalg.inv(genh)
@@ -126,7 +126,6 @@ def read_xyz(filedesc):
         names[iat], masses[iat] = body[0], Elements.mass(body[0])
         x, y, z = float(body[1]), float(body[2]), float(body[3])
 
-        # TODO: The following in matrices would use vectorial computaiton
         if usegenh:
             # must convert from the input cell parameters to the internal convention
             u = np.array([x, y, z])
