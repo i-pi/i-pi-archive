@@ -12,4 +12,4 @@ doc/manual.xml
 *~
 \#*
 *.orig
-regtest-ref/*
+regtest-ref
