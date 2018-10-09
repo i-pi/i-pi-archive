@@ -187,11 +187,11 @@
 \par\end{center}
 
 \begin{center}
-{\Large\bf A Python interface for \\Path Integral Molecular Dynamics}
+{\Large\bf A Universal Force Engine for Advanced Molecular Dynamics}
 \par\end{center}
 
 \begin{center}
-{\large v. 1.0}
+{\large v. 2.0}
 \par\end{center}
 
 \end{titlepage}
@@ -208,12 +208,16 @@
 
 \label{intro}
 
-\ipi is a Path Integral Molecular Dynamics (PIMD) interface written
+\ipi is a interface for advanced molecular simulations written
 in Python, designed to be used together with an \emph{ab initio} evaluation
 of the interactions between the atoms. The main goal is to decouple
 the problem of evolving the ionic positions to sample the appropriate
 thermodynamic ensemble and the problem of computing the inter-atomic
-forces. 
+forces. \ipi was initially developed for Path Integral Molecular Dynamics (PIMD)
+simulations, and contains probably the most comprehensive array of PIMD
+techniques. Since v2.0, however, it also contains several general-purpose 
+methods for molecular simulations, ranging from phonon calculators to 
+replica exchange molecular dynamics.
 
 \begin{figure}[hb]
 \centering\includegraphics[width=0.9\textwidth]{figures/ipi-scheme.pdf}
