@@ -14,7 +14,7 @@ from ipi.utils.inputvalue import *
 from ipi.utils.units import *
 
 
-__all__ = ['InputNormalModes']
+__all__ = ['InputNormalModes', 'InputNMFrequencies']
 
 
 class InputNMFrequencies(InputArray):
