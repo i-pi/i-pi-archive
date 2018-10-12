@@ -1080,7 +1080,7 @@ class ThermoFFL(Thermostat):
             print "Soft -- Work in progress"
         elif (self.flip == 'hard'):
             # Hard flip
-            print "Hard -- Work in progress"
+            p = np.multiply(p,np.sign(np.multiply(p,p_old)))
         elif (self.flip == 'rescale'):
             # Rescale flip
             print "Rescale -- Work in progress"
@@ -1092,6 +1092,7 @@ class ThermoFFL(Thermostat):
         p *= sm
 
         self.p = p
+        print "AFTER",p
         self.ethermo = et
 
 
