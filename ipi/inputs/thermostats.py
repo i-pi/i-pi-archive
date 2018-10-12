@@ -46,7 +46,7 @@ class InputThermoBase(Input):
        intau: Sets the estimated time scale of the inherent force noise term. Defaults to 0.0.
        idtau: Sets the estimated time scale of the forces' inherent dissipation. Defaults to 0.0.
        apat: Time scale for automatic parameter adjustment of intau or idtau. Defaults to 0.0.
-       flip: Flipping type for FFL thermostat ('soft', 'hard', 'rescale'). Defaults to 'rescale'
+       flip: Flipping type for FFL thermostat ('soft', 'hard', 'rescale', 'none'). Defaults to 'rescale'
 
     """
 
@@ -91,7 +91,7 @@ class InputThermoBase(Input):
                                     "dimension": "time"}),
               "flip": (InputValue, {"dtype": str,
                                     "default": "rescale",
-                                    "help": "Flipping type for FFL thermostat ('soft', 'hard', 'rescale')"})
+                                    "help": "Flipping type for FFL thermostat ('soft', 'hard', 'rescale', 'none')"})
               }
 
     dynamic = {}

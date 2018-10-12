@@ -1037,7 +1037,7 @@ class ThermoFFL(Thermostat):
               Defaults to 0.0. Will be non-zero if the thermostat is
               initialised from a checkpoint file.
            flip: The flipping type. Defaults to 'rescale'.
-              Allowed values are 'soft', 'hard', 'rescale'.
+              Allowed values are 'soft', 'hard', 'rescale', 'none'.
         """
 
         super(ThermoFFL, self).__init__(temp, dt, ethermo)
@@ -1051,11 +1051,11 @@ class ThermoFFL(Thermostat):
                                dependencies=[dself.temp, dself.T])
         dself.flip = depend_value(value=flip, name='flip')
 
-        allowed_flips = ['soft','hard','rescale']
+        allowed_flips = ['soft','hard','rescale','none']
         if not (self.flip in allowed_flips):
-            raise KeyError("Invalid flip type " + self.flip + "; allowed flip types: " + ' '.join(allowed_flips))
+            raise KeyError('Invalid flip type ' + self.flip + '; allowed flip types: "' + '", "'.join(allowed_flips) + '"')
 
-    def step(self):                                                               ###TODO: DO THE FLIPPING.
+    def step(self):
         """Updates the bound momentum vector with a fast-forward langevin thermostat."""
 
         et = self.ethermo
@@ -1074,16 +1074,17 @@ class ThermoFFL(Thermostat):
         p *= self.T
         p += self.S * self.prng.gvec(len(p))
 
-        # Check whether to flip momenta back
+        # Check whether to flip momenta back                                          ###TODO: DO THE FLIPPING
         if   (self.flip == 'soft'):
             # Soft flip
-            print "Work in progress"
+            print "Soft -- Work in progress"
         elif (self.flip == 'hard'):
             # Hard flip
-            print "Work in progress"
-        else:
+            print "Hard -- Work in progress"
+        elif (self.flip == 'rescale'):
             # Rescale flip
-            print "Work in progress"
+            print "Rescale -- Work in progress"
+        # Otherwise we have chosen 'none', and we just don't do anything here
 
         # Accumulate conserved quantity
         et -= np.dot(p, p) * 0.5
