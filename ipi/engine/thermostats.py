@@ -1085,13 +1085,12 @@ class ThermoFFL(Thermostat):
         elif (self.flip == 'hard'):
             # Hard flip
             p = np.multiply(p,np.sign(np.multiply(p,p_old)))
-        elif (self.flip == 'rescale'):                                                ###TODO: RESCALE FLIPPING
+        elif (self.flip == 'rescale'):
             # Rescale flip
-            print "Rescale -- Work in progress"
-#            p_old  = np.reshape(p_old,(len(p_old)/3,3))
-#            p_new  = np.reshape(p    ,(len(p_old)/3,3))
-##            p_norm = [np.linalg.norm(p_new[i]) for i in xrange(len(p_new))]
-#            p      = np.reshape([p_old[i] * (np.linalg.norm(p_new[i]) / np.linalg.norm(p_old[i])) for i in xrange(len(p_new))],len(p))
+            p_old = np.reshape(p_store,(len(p)/3,3))
+            p_new = np.reshape(p      ,(len(p)/3,3))
+            scalfac = [np.linalg.norm(p_new[i]) / np.linalg.norm(p_old[i]) for i in xrange(len(p)/3)]
+            p = np.reshape([p_old[i] * scalfac[i] for i in xrange(len(p)/3)],len(p))
         # Otherwise we have chosen 'none', and we just don't do anything here
 
         # Accumulate conserved quantity
@@ -1148,3 +1147,6 @@ class MultiThermo(Thermostat):
         for t in self.tlist:
             t.step()
         pass
+
+def hfunc(x):
+    return (np.sign(x) - 1.0) * x
