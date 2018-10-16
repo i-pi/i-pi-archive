@@ -21,8 +21,8 @@ from ipi.engine.beads import Beads
 from ipi.engine.normalmodes import NormalModes
 
 
-__all__ = ['Thermostat', 'ThermoLangevin', 'ThermoPILE_L', 'ThermoPILE_G', 'ThermoSVR',
-           'ThermoGLE', 'ThermoNMGLE', 'ThermoNMGLEG', 'ThermoCL', 'MultiThermo', 'ThermoFFL']
+__all__ = ['Thermostat', 'ThermoLangevin', 'ThermoFFL', 'ThermoPILE_L', 'ThermoPILE_G', 'ThermoSVR',
+           'ThermoGLE', 'ThermoNMGLE', 'ThermoNMGLEG', 'ThermoCL', 'MultiThermo']
 
 
 class Thermostat(dobject):
