@@ -46,12 +46,13 @@ class InputThermoBase(Input):
        intau: Sets the estimated time scale of the inherent force noise term. Defaults to 0.0.
        idtau: Sets the estimated time scale of the forces' inherent dissipation. Defaults to 0.0.
        apat: Time scale for automatic parameter adjustment of intau or idtau. Defaults to 0.0.
+       flip: Flipping type for FFL thermostat ('soft', 'hard', 'rescale', 'none'). Defaults to 'rescale'
 
     """
 
     attribs = {"mode": (InputAttribute, {"dtype": str,
-                                         "options": ["", "langevin", "svr", "pile_l", "pile_g", "gle", "nm_gle", "nm_gle_g", "cl"],
-                                         "help": "The style of thermostatting. 'langevin' specifies a white noise langevin equation to be attached to the cartesian representation of the momenta. 'svr' attaches a velocity rescaling thermostat to the cartesian representation of the momenta. Both 'pile_l' and 'pile_g' attaches a white noise langevin thermostat to the normal mode representation, with 'pile_l' attaching a local langevin thermostat to the centroid mode and 'pile_g' instead attaching a global velocity rescaling thermostat. 'gle' attaches a coloured noise langevin thermostat to the cartesian representation of the momenta, 'nm_gle' attaches a coloured noise langevin thermostat to the normal mode representation of the momenta and a langevin thermostat to the centroid and 'nm_gle_g' attaches a gle thermostat to the normal modes and a svr thermostat to the centroid. 'cl' represents a modified langevin thermostat which compensates for additional white noise from noisy forces or for dissipative effects. 'multiple' is a special thermostat mode, in which one can define multiple thermostats _inside_ the thermostat tag."
+                                         "options": ["", "langevin", "svr", "pile_l", "pile_g", "gle", "nm_gle", "nm_gle_g", "cl", "ffl"],
+                                         "help": "The style of thermostatting. 'langevin' specifies a white noise langevin equation to be attached to the cartesian representation of the momenta. 'svr' attaches a velocity rescaling thermostat to the cartesian representation of the momenta. Both 'pile_l' and 'pile_g' attaches a white noise langevin thermostat to the normal mode representation, with 'pile_l' attaching a local langevin thermostat to the centroid mode and 'pile_g' instead attaching a global velocity rescaling thermostat. 'gle' attaches a coloured noise langevin thermostat to the cartesian representation of the momenta, 'nm_gle' attaches a coloured noise langevin thermostat to the normal mode representation of the momenta and a langevin thermostat to the centroid and 'nm_gle_g' attaches a gle thermostat to the normal modes and a svr thermostat to the centroid. 'cl' represents a modified langevin thermostat which compensates for additional white noise from noisy forces or for dissipative effects. 'ffl' is the fast-forward langevin thermostat, in which momenta are flipped back whenever the action of the thermostat changes its direction. 'multiple' is a special thermostat mode, in which one can define multiple thermostats _inside_ the thermostat tag."
                                          })}
     fields = {"ethermo": (InputValue, {"dtype": float,
                                        "default": 0.0,
@@ -87,7 +88,10 @@ class InputThermoBase(Input):
               "apat": (InputValue, {"dtype": float,
                                     "default": 0.0,
                                     "help": "The time scale for automatic adjustment of CL thermostat's parameters.",
-                                    "dimension": "time"})
+                                    "dimension": "time"}),
+              "flip": (InputValue, {"dtype": str,
+                                    "default": "rescale",
+                                    "help": "Flipping type for ffl thermostat ('soft', 'hard', 'rescale', 'none')"})
               }
 
     dynamic = {}
@@ -145,6 +149,10 @@ class InputThermoBase(Input):
             self.intau.store(thermo.intau)
             self.idtau.store(thermo.idtau)
             self.apat.store(thermo.apat)
+        elif type(thermo) is ethermostats.ThermoFFL:
+            self.mode.store("ffl")
+            self.tau.store(thermo.tau)
+            self.flip.store(thermo.flip)
         elif type(thermo) is ethermostats.Thermostat:
             self.mode.store("")
         else:
@@ -191,6 +199,8 @@ class InputThermoBase(Input):
             thermo.s = self.s.fetch()
         elif self.mode.fetch() == "cl":
             thermo = ethermostats.ThermoCL(tau=self.tau.fetch(), intau=self.intau.fetch(), idtau=self.idtau.fetch(), apat=self.apat.fetch())
+        elif self.mode.fetch() == "ffl":
+            thermo = ethermostats.ThermoFFL(tau=self.tau.fetch(),flip=self.flip.fetch())
         elif self.mode.fetch() == "":
             thermo = ethermostats.Thermostat()
         else:
@@ -206,7 +216,7 @@ class InputThermoBase(Input):
         super(InputThermoBase, self).check()
         mode = self.mode.fetch()
 
-        if mode in ["langevin", "svr", "pile_l", "pile_g", "nm_gle_g"]:
+        if mode in ["langevin", "svr", "pile_l", "pile_g", "nm_gle_g", "ffl"]:
             if self.tau.fetch() <= 0:
                 raise ValueError("The thermostat friction coefficient must be set to a positive value")
         if mode == "cl":
