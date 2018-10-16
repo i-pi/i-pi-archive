@@ -21,7 +21,7 @@ from ipi.engine.beads import Beads
 from ipi.engine.normalmodes import NormalModes
 
 
-__all__ = ['Thermostat', 'ThermoLangevin', 'ThermoPILE_L', 'ThermoPILE_G', 'ThermoSVR',
+__all__ = ['Thermostat', 'ThermoLangevin', 'ThermoFFL', 'ThermoPILE_L', 'ThermoPILE_G', 'ThermoSVR',
            'ThermoGLE', 'ThermoNMGLE', 'ThermoNMGLEG', 'ThermoCL', 'MultiThermo']
 
 
@@ -1002,6 +1002,106 @@ class ThermoCL(Thermostat):
         self.idstep = not self.idstep
 
 
+class ThermoFFL(Thermostat):
+
+    """Represents a fast-forward langevin thermostat.
+
+    Depend objects:
+       tau: Thermostat damping time scale. Larger values give a less strongly
+          coupled thermostat.
+       T: Coefficient of the diffusive contribution of the thermostat, i.e. the
+          drift back towards equilibrium. Depends on tau and the time step.
+       S: Coefficient of the stochastic contribution of the thermostat, i.e.
+          the uncorrelated Gaussian noise. Depends on T and the temperature.
+       flip: Type of flip to use ('soft', 'hard', 'rescale').
+    """
+
+    def get_T(self):
+        """Calculates the coefficient of the overall drift of the velocities."""
+
+        return np.exp(-self.dt / self.tau)
+
+    def get_S(self):
+        """Calculates the coefficient of the white noise."""
+
+        return np.sqrt(Constants.kb * self.temp * (1 - self.T**2))
+
+    def __init__(self, temp=1.0, dt=1.0, tau=1.0, ethermo=0.0, flip='rescale'):
+        """Initialises ThermoFFL.
+
+        Args:
+           temp: The simulation temperature. Defaults to 1.0.
+           dt: The simulation time step. Defaults to 1.0.
+           tau: The thermostat damping timescale. Defaults to 1.0.
+           ethermo: The initial heat energy transferred to the bath.
+              Defaults to 0.0. Will be non-zero if the thermostat is
+              initialised from a checkpoint file.
+           flip: The flipping type. Defaults to 'rescale'.
+              Allowed values are 'soft', 'hard', 'rescale', 'none'.
+        """
+
+        super(ThermoFFL, self).__init__(temp, dt, ethermo)
+        dself = dd(self)
+
+        dself.dt = depend_value(value=dt, name='dt')
+        dself.tau = depend_value(value=tau, name='tau')
+        dself.T = depend_value(name="T", func=self.get_T,
+                               dependencies=[dself.tau, dself.dt])
+        dself.S = depend_value(name="S", func=self.get_S,
+                               dependencies=[dself.temp, dself.T])
+        dself.flip = depend_value(value=flip, name='flip')
+
+        allowed_flips = ['soft','hard','rescale','none']
+        if not (self.flip in allowed_flips):
+            raise KeyError('Invalid flip type ' + self.flip + '; allowed flip types: "' + '", "'.join(allowed_flips) + '"')
+
+    def step(self):
+        """Updates the bound momentum vector with a fast-forward langevin thermostat."""
+
+        et = self.ethermo
+        p = dstrip(self.p).copy()
+        sm = dstrip(self.sm)
+
+        p /= sm
+
+        # Store momentum before langevin step
+        p_old = list(p)
+
+        # Accumulate conserved quantity
+        et += np.dot(p, p) * 0.5
+
+        # Do standard langevin thermostatting
+        p *= self.T
+        p += self.S * self.prng.gvec(len(p))
+
+        # Check whether to flip momenta back
+        if   (self.flip == 'soft'):
+            # Soft flip
+            p_old  = np.reshape(p_old,(len(p)/3,3))
+            p_new  = np.reshape(p    ,(len(p)/3,3))
+            dotpr  = hfunc(np.sum(np.multiply(p_old,p_new),axis=1) / np.sum(np.multiply(p_old,p_old),axis=1))
+            p     += np.reshape(np.multiply(dotpr,p_old.T).T,len(p))
+        elif (self.flip == 'hard'):
+            # Hard flip
+            p = np.multiply(p,np.sign(np.multiply(p,p_old)))
+        elif (self.flip == 'rescale'):
+            # Rescale flip
+            p_old   = np.reshape(p_old,(len(p)/3,3))
+            p_new   = np.reshape(p    ,(len(p)/3,3))
+            scalfac = np.linalg.norm(p_new,axis=1) / np.linalg.norm(p_old,axis=1)
+            p       = np.reshape(np.multiply(scalfac,p_old.T).T,len(p))
+        # Otherwise we have chosen 'none', and we just don't do anything here
+
+        # Accumulate conserved quantity
+        et -= np.dot(p, p) * 0.5
+
+        p *= sm
+
+        self.p = p
+        self.ethermo = et
+
+
+
 class MultiThermo(Thermostat):
 
     def __init__(self, temp=1.0, dt=1.0, ethermo=0.0, thermolist=None):
@@ -1046,3 +1146,6 @@ class MultiThermo(Thermostat):
         for t in self.tlist:
             t.step()
         pass
+
+def hfunc(x):
+    return (np.sign(x) - 1.0) * x
