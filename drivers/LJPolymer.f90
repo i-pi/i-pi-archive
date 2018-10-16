@@ -1,7 +1,7 @@
-! This performs the calculations necessary to run a Lennard-Jones (LJ) 
-! simulation.
+! This performs the calculations necessary to run a Lennard-Jones
+! polymer simulation.
 ! 
-! Copyright (C) 2013, Joshua More and Michele Ceriotti
+! Copyright (C) 2017, Mahdi Hijazi, David M. Wilkins and Michele Ceriotti
 ! 
 ! Permission is hereby granted, free of charge, to any person obtaining
 ! a copy of this software and associated documentation files (the
