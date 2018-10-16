@@ -1077,20 +1077,19 @@ class ThermoFFL(Thermostat):
         # Check whether to flip momenta back
         if   (self.flip == 'soft'):
             # Soft flip
-            p_old  = np.reshape(p_store,(len(p)/3,3))
-            p_new  = np.reshape(p      ,(len(p)/3,3))
-            dotpr  = [hfunc(np.dot(p_old[i],p_new[i]) / np.dot(p_old[i],p_old[i])) for i in xrange(len(p_old))]
-            p_new += [dotpr[i] * p_old[i] for i in xrange(len(p_old))]
-            p      = np.reshape(p_new,len(p))
+            p_old  = np.reshape(p_old,(len(p)/3,3))
+            p_new  = np.reshape(p    ,(len(p)/3,3))
+            dotpr  = hfunc(np.sum(np.multiply(p_old,p_new),axis=1) / np.sum(np.multiply(p_old,p_old),axis=1))
+            p     += np.reshape(np.multiply(dotpr,p_old.T).T,len(p))
         elif (self.flip == 'hard'):
             # Hard flip
             p = np.multiply(p,np.sign(np.multiply(p,p_old)))
         elif (self.flip == 'rescale'):
             # Rescale flip
-            p_old = np.reshape(p_store,(len(p)/3,3))
-            p_new = np.reshape(p      ,(len(p)/3,3))
-            scalfac = [np.linalg.norm(p_new[i]) / np.linalg.norm(p_old[i]) for i in xrange(len(p)/3)]
-            p = np.reshape([p_old[i] * scalfac[i] for i in xrange(len(p)/3)],len(p))
+            p_old   = np.reshape(p_old,(len(p)/3,3))
+            p_new   = np.reshape(p    ,(len(p)/3,3))
+            scalfac = np.linalg.norm(p_new,axis=1) / np.linalg.norm(p_old,axis=1)
+            p       = np.reshape(np.multiply(scalfac,p_old.T).T,len(p))
         # Otherwise we have chosen 'none', and we just don't do anything here
 
         # Accumulate conserved quantity
