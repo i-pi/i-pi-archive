@@ -1,8 +1,0 @@
- -- Driver patches directory --
-
- * This directory gives the patches required to compile the driver codes such
-   that they can be used with i-PI.
-
- * Files:
-   - espresso-x_ipi.patch: A diff file that can be used to edit the Quantum-Espresso 
-      code version x so that it can be used as a driver.

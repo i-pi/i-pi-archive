@@ -1,23 +1,23 @@
 #!/usr/bin/env python2
 
-""" parasort.py
+""" remdsort.py
 
 Relies on the infrastructure of i-pi, so the ipi package should
 be installed in the Python module directory, or the i-pi
 main directory must be added to the PYTHONPATH environment variable.
 
-Post-processes the output of a parallel-tempering simulation and
+Post-processes the output of a replica exchange simulation and
 re-orders the outputs so that they correspond to the different
-temperatures ensembles rather than to the time series of one of
-the replicas exchanging temperature over time.
+ensembles rather than to the time series of one of
+the replicas exchanging ensembles over time.
 
-It should be run in the same dyrectory as where i-pi was (or is being)
+It should be run in the same directory as where i-pi was (or is being)
 run, and simply fetches all information from the simulation input file.
 Will create a series of PTindex_* files, each corresponding to the
 data for replica 'index'.
 
 Syntax:
-   parasort.py inputfile.xml
+   remdsort.py inputfile.xml
 """
 
 
