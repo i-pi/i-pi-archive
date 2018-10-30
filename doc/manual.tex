@@ -187,11 +187,11 @@
 \par\end{center}
 
 \begin{center}
-{\Large\bf A Python interface for \\Path Integral Molecular Dynamics}
+{\Large\bf A Universal Force Engine for Advanced Molecular Dynamics}
 \par\end{center}
 
 \begin{center}
-{\large v. 1.0}
+{\large v. 2.0}
 \par\end{center}
 
 \end{titlepage}
@@ -208,12 +208,16 @@
 
 \label{intro}
 
-\ipi is a Path Integral Molecular Dynamics (PIMD) interface written
+\ipi is a interface for advanced molecular simulations written
 in Python, designed to be used together with an \emph{ab initio} evaluation
 of the interactions between the atoms. The main goal is to decouple
 the problem of evolving the ionic positions to sample the appropriate
 thermodynamic ensemble and the problem of computing the inter-atomic
-forces. 
+forces. \ipi was initially developed for Path Integral Molecular Dynamics (PIMD)
+simulations, and contains probably the most comprehensive array of PIMD
+techniques. Since v2.0, however, it also contains several general-purpose 
+methods for molecular simulations, ranging from phonon calculators to 
+replica exchange molecular dynamics.
 
 \begin{figure}[hb]
 \centering\includegraphics[width=0.9\textwidth]{figures/ipi-scheme.pdf}
@@ -481,26 +485,56 @@ The code then behaves in the following way, depending on the user's choice:
 
 \section{Core features}
 
-The functionality of \ipi includes:
+\ipi{} includes a large number of advanced molecular dynamics features, with an obvious focus on path integral molecular dynamics, but also several methods for sampling classical trajectories.
+
+\subsection{Features in version 1.0}
 \begin{itemize}
-\item Thermostats for constant temperature ensembles, including: \begin{itemize}
-\item Local and global stochastic thermostats \cite{plangevin1908cras,buss-parr08cpc}, with optional optimized sampling of the ring polymer normal mode coordinates \cite{ceri+10jcp}.
-\item Optimal sampling generalized Langevin equation (GLE) thermostats \cite{ceri+09jctc}.
-\item Path integral + GLE (PI+GLE) thermostats \cite{ceri+11jcp} for accelerating the
-convergence of the potential energy with respect to the number of replicas, 
-as well as the more recent PIGLET method \cite{ceri-mano12prl}, which also
-accelerates the convergence of the kinetic energy.
+\item molecular dynamics and PIMD in the {\em NVE}, {\em NVT} and {\em NPT} ensembles, with the high-frequency internal vibrations of the path propagated in the normal-mode representation~\cite{ceri+10jcp} {to allow for longer time steps};
+\item ring polymer contraction~\cite{mark-mano08jcp,mark-mano08cpl}, implemented 
+by exposing multiple socket interfaces to deal with short and long-range components of the potential energy separately; {treating different components that have different computational cost and characteristic time scale separately can reduce substantially the overall effort associated with a simulation}
+\item efficient stochastic velocity rescaling \cite{buss+07jcp} and 
+path integral Langevin equation thermostats~\cite{ceri+10jcp} {to sample efficiently the canonical ensemble}; 
+\item various generalized Langevin equation (GLE) thermostats,
+including the optimal sampling~\cite{ceri+09prl,ceri+10jctc}, quantum 
+~\cite{ceri+09prl2}, and $\delta$~\cite{ceri-parr10pcs} thermostats; the parameters 
+{for different GLE flavors and the conditions in which they should be applied can be obtained from a separate website~\cite{gle4md};}
+\item mixed path integral--generalized Langevin equation techniques for 
+accelerated convergence, including both PI+GLE~\cite{ceri+11jcp} and the 
+more recent and effective version PIGLET~\cite{ceri-mano12prl}; {these techniques reduce the number of path integral replicas needed, while allowing for systematic convergence;}
+\item all the standard estimators for structural properties, the quantum 
+kinetic energy, pressure, etc.;
+\item more sophisticated estimators such as the scaled-coordinate 
+heat capacity estimator~\cite{yama05jcp}, 
+estimators to obtain isotope fractionation free energies by re-weighting a 
+simulation of the most abundant isotope~\cite{ceri-mark13jcp}, and 
+a displaced-path estimator for the particle momentum distribution~\cite{lin+10prl};
+\item the infrastructure that is needed to perform approximate quantum dynamics calculations such as ring polymer molecular dynamics (RPMD)~\cite{crai-mano04jcp,habe+13arpc} and centroid molecular dynamics
+(CMD)~\cite{cao-voth93jcp,cao-voth94jcp}.
 \end{itemize}
-\item Barostats for constant pressure ensembles \cite{mart+99jcp,buss+09jpc}.
-\item Ring polymer contraction \cite{mark-mano08jcp}.
-\item Scaled path finite difference energy and heat capacity estimators
-\cite{tyamamoto05jcp}.
-\item Displaced path momentum distribution estimator \cite{linlin+10prl}.
-\item Dynamical property calculation modes:\begin{itemize}
-\item Ring polymer molecular dynamics \cite{crai-mano04jcp}.
-\item Partially-adiabatic centroid molecular dynamics \cite{habe+08jcp,hone+06jcp}.
+
+\subsection{Features added in version 2.0}
+
+\begin{itemize}
+\item reweighted fourth-order path integral MD (M. Ceriotti, G.A.R. Brain)~\cite{ceri+12prsa,jang-voth01jcp}; {this method makes it possible to obtain fourth-order statistics by re-weighting second-order trajectories; attention should be paid to avoid statistical inefficiencies;}
+\item finite-differences implementation of fourth-order path integrals (V. Kapil, M. Ceriotti)~\cite{kapi+16jcp2}; {this schemes enables explicit fourth-order path integral simulations, that converge faster than conventional Trotter methods};
+\item perturbed path integrals (I. Poltavsky)~\cite{polt-tkat16cs}; {essentially, a truncated cumulant expansion of fourth-order reweighting, that often enables fast convergence avoiding statistical instability; }
+\item open path integrals and momentum distribution estimators (V. Kapil, A. Cuzzocrea, M. Ceriotti) \cite{kapi+18jpcb}; {makes it possible to compute the particle momentum distribution including quantum fluctuations of nuclei;} 
+\item quantum alchemical transformations (B. Cheng) \cite{liu+13jpcc,chen+16jpcl}; {Monte Carlo exchanges between isotopes of different mass, useful to sample isotope propensity for different molecules or environments;}
+\item direct isotope fractionation estimators (B. Cheng, M. Ceriotti) ~\cite{chen-ceri14jcp}; {avoid thermodynamic integration to obtain isotope fractionation ratios;}
+\item spatially localized ring polymer contraction (M. Rossi, M. Ceriotti) \cite{litm+17jcp}; {simple contraction scheme for weakly bound molecules, e.g. on surfaces;}
+\item ring polymer instantons (Y. Litman, J.O. Richardson, M. Rossi); {evaluation of reaction rates and tunnelling splittings for molecular rearrangements and chemical reactions;}
+\item thermodynamic integration (M. Rossi, M. Ceriotti) \cite{ross+16prl}; {classical scheme to compute free energy differences;}
+\item geometry optimizers for minimization and saddle point search (B. Helfrecht, R. Petraglia, Y. Litman, M. Rossi) \cite{ross+16prl}
+\item harmonic vibrations through finite differences (V. Kapil, S. Bienvenue)  \cite{ross+16prl}; {simple evaluation of the harmonic Hessian;}
+\item multiple time stepping (V. Kapil, M. Ceriotti) \cite{kapi+16jcp}; {accelerated simulations by separating slow and fast degrees of freedom into different components of the potential energy;}
+\item metadynamics through a PLUMED interface (G. Tribello, M. Ceriotti); {simulation of rare events and free energy calculations;}
+\item replica exchange MD (R. Petraglia, R. Meissner, M. Ceriotti)~\cite{petr+15jcc}; {accelerated convergence of averages by performing Monte Carlo exchanges of configurations between parallel calculations}
+\item thermostatted RPMD~\cite{ross+14jcp}, including optimized-GLE TRPMD~\cite{ross+18jcp}; {reduces well-known artifacts in the simulation of dynamical properties by path integral methods;}
+\item dynamical corrections to Langevin trajectories (M. Rossi, V. Kapil, M. Ceriotti)~\cite{ross+18jcp}; {eliminates the artifacts introduced into dynamical properties by the presence of thermostats;}
+\item fast forward Langevin thermostat (M. Hijazi, D. M. Wilkins, M. Ceriotti); {a simple scheme to reduce the impact of strongly-damped Langevin thermostats on sampling efficiency;} \cite{hija+18jcp}
+\item Langevin sampling for noisy and/or dissipative forces (J. Kessler, T. D. K\"uhne); {suitable to stabilize and correct the artifacts that are introduced in MD trajectories by different extrapolation schemes;}
 \end{itemize}
-\end{itemize}
+
 
 \section{Licence and credits}
 
@@ -511,7 +545,7 @@ in the directory {}``drivers'' are all held under the MIT licence.
 For more details see \url{https://fedoraproject.org/wiki/Licensing:MIT}.
 
 If you use this code in any
-future publications, please cite this using {[}cpc paper citation{]}.
+future publications, please cite this using {[}\cite{ceri+14cpc}{]}.
 
 \subsection{Contributors}
 
@@ -1147,7 +1181,7 @@ client is functioning correctly. There is one simple 4-atom lithium
 test, and a test using a single water molecule.
 \item [{harmonic:}] This has a simple example of a 1D harmonic oscillator.
 This demonstrates the displaced path integral momentum distribution
-estimator as given in \cite{linlin+10prl}. As the momentum distribution
+estimator as given in \cite{lin+10prl}. As the momentum distribution
 is known analytically for this simple system, this provides an indication
 of how well the method is working.
 \item [{lammps:}] This has a simple implementation of the q-TIP4P-F empirical
@@ -1158,7 +1192,7 @@ methods \cite{mark-mano08jcp}.
 
 This also contains one example using LAMMPS to calculate the interactions
 between carbon atoms in graphene. This uses the optimized Tersoff 
-parameters for carbon given in \cite{lind-broi10prb,errlind-broi10prb}.
+parameters for carbon given in \cite{lind-broi10prb}.
 \item [{cp2k:}] Contains the tests for the CP2K client code. Holds input files
 to run the high-pressure water calculations 
 presented in [cpc publication citation].
@@ -1934,12 +1968,23 @@ possibly followed by their attributes.
 \emph{\small Other supplementary information} will be in small font and italicized.
 
 \input{input_docs/simulation}
-%\input{input_docs/paratemp}
 \input{input_docs/forcefield}
 \input{input_docs/ffsocket}
+\input{input_docs/ffdebye}
+\input{input_docs/fflj}
+\input{input_docs/ffplumed}
+\input{input_docs/ffyaff}
 \input{input_docs/system}
+\input{input_docs/smotion}
+\input{input_docs/remd}
+\input{input_docs/meta}
 \input{input_docs/motion}
 \input{input_docs/dynamics}
+\input{input_docs/alchemy}
+\input{input_docs/instanton}
+\input{input_docs/phonons}
+\input{input_docs/geop}
+\input{input_docs/neb}
 \input{input_docs/initializer}
 \input{input_docs/init_file}
 \input{input_docs/init_pos}
@@ -1955,7 +2000,8 @@ possibly followed by their attributes.
 \input{input_docs/cell}
 \input{input_docs/beads}
 \input{input_docs/atoms}
-\input{input_docs/normal_modes}
+\input{input_docs/normalmodes}
+\input{input_docs/nmfrequencies}
 \input{input_docs/barostats}
 \input{input_docs/thermostats}
 \input{input_docs/prng}

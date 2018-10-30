@@ -32,7 +32,7 @@ sys.path.append(src_dir)
 
 from ipi.inputs import barostats, cell, simulation, system, \
     ensembles, thermostats, forcefields, forces, atoms, beads, \
-    prng, initializer, normalmodes, outputs, motion
+    prng, initializer, normalmodes, outputs, motion, smotion
 
 
 time.sleep(1)
@@ -41,21 +41,32 @@ __all__ = ['help', 'objects']
 objects = {'barostats': barostats.InputBaro(),
            'cell': cell.InputCell(),
            'simulation': simulation.InputSimulation(),
-           # 'paratemp': paratemp.InputParaTemp(),
+           'smotion': smotion.smotion.InputSmotion(),
+           'remd': smotion.remd.InputReplicaExchange(),
+           'meta': smotion.metad.InputMetaDyn(),
            'system': system.InputSystem(),
            'ensembles': ensembles.InputEnsemble(),
            'motion': motion.motion.InputMotion(),
            'dynamics': motion.dynamics.InputDynamics(),
+           'alchemy': motion.alchemy.InputAlchemy(),
+           'instanton': motion.instanton.InputInst(),
+           'phonons': motion.phonons.InputDynMatrix(),
+           'geop': motion.geop.InputGeop(),
+           'neb': motion.neb.InputNEB(),
            'thermostats': thermostats.InputThermo(),
            'forcefield': forcefields.InputForceField(),
            'ffsocket': forcefields.InputFFSocket(),
            'fflj': forcefields.InputFFLennardJones(),
+           'ffdebye': forcefields.InputFFDebye(),
+           'ffplumed': forcefields.InputFFPlumed(),           
+           'ffyaff': forcefields.InputFFYaff(),           
            'forcecomponent': forces.InputForceComponent(),
            'forces': forces.InputForces(),
            'atoms': atoms.InputAtoms(),
            'beads': beads.InputBeads(),
            'prng': prng.InputRandom(),
-           'normal_modes': normalmodes.InputNormalModes(),
+           'normalmodes': normalmodes.InputNormalModes(),
+           'nmfrequencies': normalmodes.InputNMFrequencies(),
            'init_file': initializer.InputInitFile(),
            'init_pos': initializer.InputInitPositions(),
            'init_mom': initializer.InputInitMomenta(),
