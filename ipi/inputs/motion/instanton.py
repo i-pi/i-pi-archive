@@ -144,8 +144,8 @@ class InputInst(InputDictionary):
 
     dynamic = {}
 
-    default_help = "TODO EXPLAIN WHAT THIS IS"
-    default_label = "Instanton"
+    default_help = "A class for instanton calculations"
+    default_label = "INSTANTON"
 
     def store(self, geop):
         if geop == {}:
