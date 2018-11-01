@@ -24,7 +24,7 @@ def local(file=None):
         return os.path.join(os.path.dirname(__file__), file)
 
 
-class TestSimulation(object):
+class SimulationTest(object):
 
     """Simple class used to test various aspects of the simulation.
 
@@ -40,7 +40,7 @@ class TestSimulation(object):
     """
 
     def __init__(self, input, driver):
-        """Initializes TestSimulation.
+        """Initializes SimulationTest.
 
         Args:
            input: The name of the xml input file.

@@ -5,10 +5,10 @@
 # See the "licenses" directory for full license information.
 
 
-from common import TestSimulation
+from common import SimulationTest
 
 
 def test_lj_gas():
-    ts = TestSimulation(input="../../test/lj/gas/input.xml", driver="../../drivers/driver.x")
+    ts = SimulationTest(input="../../test/lj/gas/input.xml", driver="../../drivers/driver.x")
     ts.run()
     # Test properties (e.g. latest positions/temperature etc)

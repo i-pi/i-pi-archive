@@ -27,6 +27,7 @@ def units_preparation(request):
     return request.param
 
 
+@pytest.mark.skip(reason="This needs to be updated to match current code.")
 def test_process_units_noobj(units_preparation):
 
     natoms, frames, comment, conver_xyz, conver_cell = units_preparation
@@ -57,6 +58,7 @@ def test_process_units_noobj(units_preparation):
     assert res['natoms'] == natoms
 
 
+@pytest.mark.skip(reason="This needs to be updated to match current code.")
 def test_process_units_object(units_preparation):
 
     natoms, frames, comment, conver_xyz, conver_cell = units_preparation

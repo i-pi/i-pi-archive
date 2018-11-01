@@ -5,7 +5,6 @@ import tempfile
 import re
 
 import pytest
-from pytest_mock import mocker
 
 import numpy as np
 import numpy.testing as npt
@@ -91,6 +90,7 @@ def prepare_Trajectories_print_traj(request):
     return system_mock, stream, bead, expected_position, expected_cell, expected_comment, expected_names, format_, property_, cell_units, unit_conv
 
 
+@pytest.mark.skip(reason="This needs to be updated to match current code.")
 def test_Trajectories_print_traj(prepare_Trajectories_print_traj, mocker):
 
     mock_io = mocker.patch('ipi.engine.properties.io.print_file', autospec=True)

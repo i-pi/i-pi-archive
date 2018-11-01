@@ -61,16 +61,16 @@ The monitoring can be interrupted with CTRL+C when the run has finished (5000 st
 Run the automatic test suite
 ----------------------------
 
-The automatic test suite can be run with the Python package `nose` from the
+The automatic test suite can be run with the Python package `pytest` from the
 root directory of the i-PI project.
 
 ::
 
-  $ nosetests -v
+  $ pytest -v
 
-============
+
 PEP-8 Compliance
-============
+================
 
 i-PI code should be compliant to a minimal subset of PEP-8 recommendations.
 Before proceeding to a pull request, or to the merging of a large commit, you
